@@ -150,13 +150,13 @@
             
         </div>
     </div>
-
     <script>
         // Initialize OneSignal
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         OneSignalDeferred.push(async function(OneSignal) {
             await OneSignal.init({
                 appId: "d7c1ea6e-ba97-4e58-8660-178510f826f5",
+                safari_web_id: "web.onesignal.auto.xxx",
                 allowLocalhostAsSecureOrigin: true,
             });
             console.log("JEANS CLUB: OneSignal initialized");
@@ -183,45 +183,57 @@
             statusDiv.innerHTML = '📡 Requesting notification permission...';
             
             try {
-                const permission = await OneSignal.Notifications.requestPermission();
+                // Check if already subscribed
+                const subscription = await OneSignal.User.PushSubscription.optedIn;
                 
-                if (permission) {
-                    statusDiv.innerHTML = '✅ Setting up your notifications...';
-  
-                    // Set phone as External ID in OneSignal
+                if (subscription) {
+                    // Already subscribed
                     await OneSignal.login(formattedPhone);
-                    
-                    // Add user tags
                     await OneSignal.User.addTags({
                         phone: formattedPhone,
                         source: 'web',
-                        joined_date: new Date().toISOString(),
-                        type: 'subscriber'
+                        joined_date: new Date().toISOString()
                     });
                     
-                    // Store in localStorage for reference
-                    const subscribers = JSON.parse(localStorage.getItem('jeansclub_subscribers') || '[]');
-                    if (!subscribers.includes(formattedPhone)) {
-                        subscribers.push(formattedPhone);
-                        localStorage.setItem('jeansclub_subscribers', JSON.stringify(subscribers));
-                    }
-                    
                     statusDiv.className = 'status success';
-                    statusDiv.innerHTML = '✅ Subscribed to JEANS CLUB Notifications! 🖤<br><br>📝 Your phone number has been saved locally.<br>You will receive notifications at 9 AM and 7 PM daily.<br><br>📞 Please inform staff to add you to the master list.';
-                    
-                    document.getElementById('phoneNumber').value = '';
-                    
+                    statusDiv.innerHTML = '✅ Already subscribed! You will receive JEANS CLUB notifications. 🖤';
                 } else {
-                    statusDiv.className = 'status error';
-                    statusDiv.innerHTML = '❌ Please allow notifications to receive updates. Refresh and try again.';
+                    // Request permission
+                    const permission = await OneSignal.Notifications.requestPermission();
+                    
+                    if (permission) {
+                        await OneSignal.login(formattedPhone);
+                        await OneSignal.User.addTags({
+                            phone: formattedPhone,
+                            source: 'web',
+                            joined_date: new Date().toISOString()
+                        });
+                        
+                        statusDiv.className = 'status success';
+                        statusDiv.innerHTML = '✅ Subscribed to JEANS CLUB Notifications! 🖤<br><br>You will receive notifications at 9 AM and 7 PM daily.<br><br>📞 Please tell staff your phone number: ' + formattedPhone;
+                        
+                        document.getElementById('phoneNumber').value = '';
+                    } else {
+                        statusDiv.className = 'status error';
+                        statusDiv.innerHTML = '❌ You blocked notifications. Please go to browser settings → Notifications → Allow for this site.';
+                    }
                 }
                 
             } catch (error) {
                 console.error("Subscription error:", error);
                 statusDiv.className = 'status error';
-                statusDiv.innerHTML = '❌ Something went wrong. Please refresh and try again.';
+                statusDiv.innerHTML = '❌ Error: ' + error.message;
             }
         }
+        
+        // Check subscription status on page load
+        window.OneSignalDeferred.push(async function(OneSignal) {
+            const isSubscribed = await OneSignal.User.PushSubscription.optedIn;
+            if (isSubscribed) {
+                document.getElementById('status').className = 'status success';
+                document.getElementById('status').innerHTML = '✅ You are already subscribed to JEANS CLUB notifications! 🖤';
+            }
+        });
     </script>
 </body>
 </html>
