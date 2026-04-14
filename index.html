@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🖤 JEANS CLUB -  Humor Notifications</title>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #000;
+        }
+        
+        button {
+            background: #000;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            background: #333;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+        
+        .sample-joke {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-style: italic;
+            color: #666;
+            font-size: 14px;
+            border-left: 4px solid #000;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖤 JEANS CLUB</h1>
+        <div class="subtitle"> Humor Notifications</div>
+        
+        <div class="input-group">
+            <label>📱 Your Phone Number</label>
+            <input type="tel" id="phoneNumber" placeholder="+256 772 558 913">
+        </div>
+        
+        <button onclick="subscribeToDarkHumor()">
+            🔔 Subscribe to Dark Humor
+        </button>
+        
+        <div id="status" class="status"></div>
+        
+        <div class="sample-joke">
+            💀 Sample: "JEANS CLUB: Good morning! Your favorite jeans are still the same price as yesterday. Yes, we saw you checking. No, they won't get cheaper. Stop asking."
+        </div>
+        
+        <div class="footer">
+            You'll receive daily  humor at 9 AM & 7 PM.<br>
+            No discounts. Just truth. And jokes. Mostly jokes.
+        </div>
+    </div>
+
+    <script>
+        // Initialize OneSignal
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(async function(OneSignal) {
+            await OneSignal.init({
+                appId: "YOUR_ONESIGNAL_APP_ID",  // ← YOU WILL REPLACE THIS
+                allowLocalhostAsSecureOrigin: true,
+            });
+            console.log("JEANS CLUB: OneSignal initialized");
+        });
+        
+        async function subscribeToDarkHumor() {
+            const phone = document.getElementById('phoneNumber').value.trim();
+            const statusDiv = document.getElementById('status');
+            
+            // Validate phone number
+            if (!phone) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '❌ Please enter your phone number';
+                return;
+            }
+            
+            // Format phone number (add +256 if needed)
+            let formattedPhone = phone;
+            if (phone.startsWith('0')) {
+                formattedPhone = '+256' + phone.substring(1);
+            } else if (!phone.startsWith('+')) {
+                formattedPhone = '+256' + phone;
+            }
+            
+            statusDiv.className = 'status';
+            statusDiv.innerHTML = '📡 Requesting notification permission...';
+            
+            try {
+                // Request notification permission
+                const permission = await OneSignal.Notifications.requestPermission();
+                
+                if (permission) {
+                    statusDiv.innerHTML = '✅ Setting up your dark humor feed...';
+                    
+                    // Set phone number as External ID
+                    await OneSignal.login(formattedPhone);
+                    
+                    // Add user tags
+                    await OneSignal.User.addTags({
+                        phone: formattedPhone,
+                        source: 'web_dark_humor',
+                        joined_date: new Date().toISOString(),
+                        type: 'dark_humor_subscriber'
+                    });
+                    
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = '✅ Subscribed to JEANS CLUB Dark Humor! 🖤<br>You will receive notifications at 9 AM and 7 PM daily.<br><br>⚠️ Warning: We will make fun of your shopping habits.';
+                    
+                    document.getElementById('phoneNumber').value = '';
+                    
+                    // Send a welcome dark humor
+                    setTimeout(() => {
+                        statusDiv.innerHTML += '<br><br>💀 First joke incoming... check your notifications!';
+                    }, 2000);
+                    
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = '❌ Please allow notifications to receive dark humor. Refresh and try again.';
+                }
+                
+            } catch (error) {
+                console.error("Subscription error:", error);
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '❌ Something went wrong. Please refresh and try again.';
+            }
+        }
+    </script>
+</body>
+</html>
