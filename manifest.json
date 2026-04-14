@@ -1,0 +1,7 @@
+{
+  "name": "JEANS CLUB",
+  "short_name": "JEANS CLUB",
+  "start_url": "/",
+  "display": "standalone",
+  "gcm_sender_id": "482941778795"
+}
