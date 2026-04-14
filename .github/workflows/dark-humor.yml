@@ -1,0 +1,53 @@
+name: 🖤 JEANS CLUB - Dark Humor Notifications
+
+on:
+  schedule:
+    - cron: '0 9 * * *'
+    - cron: '0 19 * * *'
+  workflow_dispatch:
+
+jobs:
+  send-humor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Customers & Send
+        env:
+          ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
+          ONESIGNAL_API_KEY: ${{ secrets.ONESIGNAL_API_KEY }}
+          GIST_ID: ${{ secrets.GIST_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Fetch customers
+          RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            https://api.github.com/gists/$GIST_ID)
+          
+          CUSTOMERS=$(echo $RESPONSE | jq -r '.files["jeansclub-customers.json"].content' | jq -c '.customers')
+          PHONES=$(echo $CUSTOMERS | jq -r '[.[].phone]')
+          COUNT=$(echo $PHONES | jq 'length')
+          
+          echo "📊 Found $COUNT customers"
+          
+          # Morning or evening?
+          HOUR=$(date +%H)
+          if [ "$HOUR" -eq 9 ]; then
+            TITLE="🖤 JEANS CLUB - MORNING"
+            MESSAGE="🌅 JEANS CLUB: Good morning! Your favorite jeans are still the same price. Yes, we saw you checking. No, they won't get cheaper. Stop asking."
+          else
+            TITLE="🖤 JEANS CLUB - EVENING"
+            MESSAGE="🌙 JEANS CLUB: Evening! You tried to bargain for 5k. You lost the jeans. 5k. For denim you loved. Your negotiation skills cost you. Priceless."
+          fi
+          
+          if [ "$COUNT" -gt 0 ]; then
+            curl -X POST https://onesignal.com/api/v1/notifications \
+              -H "Authorization: Basic $ONESIGNAL_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"app_id\": \"$ONESIGNAL_APP_ID\",
+                \"headings\": {\"en\": \"$TITLE\"},
+                \"contents\": {\"en\": \"$MESSAGE\"},
+                \"include_external_user_ids\": $PHONES
+              }"
+            echo "✅ Sent to $COUNT customers"
+          else
+            echo "⚠️ No customers yet"
+          fi
