@@ -156,7 +156,7 @@
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         OneSignalDeferred.push(async function(OneSignal) {
             await OneSignal.init({
-                appId: "YOUR_ONESIGNAL_APP_ID",  // ← YOU WILL REPLACE THIS
+                appId: "d7c1ea6e-ba97-4e58-8660-178510f826f5",
                 allowLocalhostAsSecureOrigin: true,
             });
             console.log("JEANS CLUB: OneSignal initialized");
@@ -166,14 +166,12 @@
             const phone = document.getElementById('phoneNumber').value.trim();
             const statusDiv = document.getElementById('status');
             
-            // Validate phone number
             if (!phone) {
                 statusDiv.className = 'status error';
                 statusDiv.innerHTML = '❌ Please enter your phone number';
                 return;
             }
             
-            // Format phone number (add +256 if needed)
             let formattedPhone = phone;
             if (phone.startsWith('0')) {
                 formattedPhone = '+256' + phone.substring(1);
@@ -185,36 +183,37 @@
             statusDiv.innerHTML = '📡 Requesting notification permission...';
             
             try {
-                // Request notification permission
                 const permission = await OneSignal.Notifications.requestPermission();
                 
                 if (permission) {
-                    statusDiv.innerHTML = '✅ Setting up your dark humor feed...';
-                    
-                    // Set phone number as External ID
+                    statusDiv.innerHTML = '✅ Setting up your notifications...';
+  
+                    // Set phone as External ID in OneSignal
                     await OneSignal.login(formattedPhone);
                     
                     // Add user tags
                     await OneSignal.User.addTags({
                         phone: formattedPhone,
-                        source: 'web_dark_humor',
+                        source: 'web',
                         joined_date: new Date().toISOString(),
-                        type: 'dark_humor_subscriber'
+                        type: 'subscriber'
                     });
                     
+                    // Store in localStorage for reference
+                    const subscribers = JSON.parse(localStorage.getItem('jeansclub_subscribers') || '[]');
+                    if (!subscribers.includes(formattedPhone)) {
+                        subscribers.push(formattedPhone);
+                        localStorage.setItem('jeansclub_subscribers', JSON.stringify(subscribers));
+                    }
+                    
                     statusDiv.className = 'status success';
-                    statusDiv.innerHTML = '✅ Subscribed to JEANS CLUB Dark Humor! 🖤<br>You will receive notifications at 9 AM and 7 PM daily.<br><br>⚠️ Warning: We will make fun of your shopping habits.';
+                    statusDiv.innerHTML = '✅ Subscribed to JEANS CLUB Notifications! 🖤<br><br>📝 Your phone number has been saved locally.<br>You will receive notifications at 9 AM and 7 PM daily.<br><br>📞 Please inform staff to add you to the master list.';
                     
                     document.getElementById('phoneNumber').value = '';
                     
-                    // Send a welcome dark humor
-                    setTimeout(() => {
-                        statusDiv.innerHTML += '<br><br>💀 First joke incoming... check your notifications!';
-                    }, 2000);
-                    
                 } else {
                     statusDiv.className = 'status error';
-                    statusDiv.innerHTML = '❌ Please allow notifications to receive dark humor. Refresh and try again.';
+                    statusDiv.innerHTML = '❌ Please allow notifications to receive updates. Refresh and try again.';
                 }
                 
             } catch (error) {
