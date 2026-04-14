@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JEANS CLUB -  Notifications</title>
+    <title>JEANS CLUB - Notifications</title>
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <style>
         * {
@@ -21,18 +21,6 @@
             position: relative;
         }
         
-        /* Dark overlay for readability */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 0;
-        }
-        
         .container {
             position: relative;
             z-index: 1;
@@ -40,15 +28,16 @@
             margin: 0 auto;
         }
         
-        /* Main Card */
+        /* Main Card - TRANSPARENT, NO DARK OVERLAY */
         .main-card {
-            background: rgba(255, 255, 255, 0.97);
+            background: rgba(0, 0, 0, 0.6);
             border-radius: 25px;
             padding: 35px;
             margin-bottom: 20px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.3);
             backdrop-filter: blur(5px);
             text-align: center;
+            border: 1px solid rgba(255,215,0,0.3);
         }
         
         .brand-logo {
@@ -63,10 +52,12 @@
         
         .tagline {
             text-align: center;
-            color: #666;
+            color: #FFD700;
             font-size: 12px;
             letter-spacing: 3px;
             margin-bottom: 25px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
         
         .input-group {
@@ -78,28 +69,32 @@
             display: block;
             margin-bottom: 8px;
             font-weight: bold;
-            color: #333;
+            color: #FFD700;
             font-size: 14px;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
         }
         
         input {
             width: 100%;
             padding: 15px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid rgba(255,215,0,0.5);
             border-radius: 12px;
             font-size: 16px;
             transition: all 0.3s;
+            background: rgba(255,255,255,0.9);
+            color: #333;
         }
         
         input:focus {
             outline: none;
             border-color: #FFD700;
             box-shadow: 0 0 0 3px rgba(255,215,0,0.2);
+            background: white;
         }
         
         button {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: white;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #1a1a2e;
             border: none;
             padding: 16px 30px;
             border-radius: 12px;
@@ -113,7 +108,7 @@
         button:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+            background: linear-gradient(135deg, #FFE44D 0%, #FFB347 100%);
         }
         
         .status {
@@ -122,38 +117,41 @@
             border-radius: 12px;
             display: none;
             font-size: 14px;
+            font-weight: bold;
         }
         
         .status.success {
-            background: #d4edda;
-            color: #155724;
+            background: rgba(40, 167, 69, 0.85);
+            color: white;
             display: block;
-            border-left: 4px solid #28a745;
+            border-left: 4px solid #FFD700;
         }
         
         .status.error {
-            background: #f8d7da;
-            color: #721c24;
+            background: rgba(220, 53, 69, 0.85);
+            color: white;
             display: block;
-            border-left: 4px solid #dc3545;
+            border-left: 4px solid #FFD700;
         }
         
-        /* Help Card */
+        /* Help Card - TRANSPARENT */
         .help-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(0, 0, 0, 0.6);
             border-radius: 25px;
             padding: 25px;
             margin-bottom: 20px;
             backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,215,0,0.3);
         }
         
         .help-title {
             font-size: 20px;
             font-weight: bold;
-            color: #333;
+            color: #FFD700;
             margin-bottom: 15px;
             border-left: 4px solid #FFD700;
             padding-left: 12px;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
         }
         
         .contact-grid {
@@ -168,15 +166,16 @@
             align-items: center;
             gap: 12px;
             padding: 12px;
-            background: #f8f9fa;
+            background: rgba(255,255,255,0.15);
             border-radius: 12px;
             text-decoration: none;
             transition: all 0.2s;
+            backdrop-filter: blur(4px);
         }
         
         .contact-item:hover {
             transform: translateX(5px);
-            background: #e9ecef;
+            background: rgba(255,255,255,0.25);
         }
         
         .contact-icon {
@@ -191,13 +190,13 @@
         
         .contact-label {
             font-size: 12px;
-            color: #666;
+            color: rgba(255,255,255,0.7);
         }
         
         .contact-number {
             font-size: 16px;
             font-weight: bold;
-            color: #333;
+            color: #FFD700;
         }
         
         .whatsapp {
@@ -230,14 +229,24 @@
             text-align: center;
             padding: 15px;
             font-size: 11px;
-            color: rgba(255,255,255,0.6);
+            color: #FFD700;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
         }
         
         hr {
             margin: 15px 0;
             border: none;
             height: 1px;
-            background: #e0e0e0;
+            background: rgba(255,215,0,0.3);
+        }
+        
+        /* Text in help card */
+        .help-card p {
+            color: rgba(255,255,255,0.85);
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.2);
         }
         
         @media (max-width: 480px) {
@@ -323,16 +332,15 @@
             <hr>
             
             <div class="help-title">❓ WHAT IS THIS?</div>
-            <p style="color: #555; font-size: 13px; line-height: 1.5; margin-bottom: 10px;">
-                You'll receive dark humor notifications at <strong>9:00 AM, 1:00 PM, and 7:00 PM</strong> daily.
-                We  love you Mostly because we want your money. But also love.
+            <p style="color: rgba(255,255,255,0.85); font-size: 13px; line-height: 1.5; margin-bottom: 10px;">
+                You'll receive  notifications at <strong style="color:#FFD700;">9:00 AM, 1:00 PM, and 7:00 PM</strong> daily.
+                We love you. Mostly because we want your money. But also love.
             </p>
            
         </div>
         
         <div class="footer">
-             JEANS CLUB - Raised on Denim <br>
-            
+            JEANS CLUB - Raised on Denim <br>
         </div>
     </div>
 
