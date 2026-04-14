@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🖤 JEANS CLUB - Dark Humor Notifications</title>
+    <title> JEANS CLUB -  Humor Notifications</title>
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <style>
         * {
@@ -118,8 +118,8 @@
 </head>
 <body>
     <div class="container">
-        <h1>🖤 JEANS CLUB</h1>
-        <div class="subtitle">Dark Humor Notifications</div>
+        <h1> JEANS CLUB</h1>
+        <div class="subtitle"> Notifications</div>
         
         <div class="input-group">
             <label>📱 Your Phone Number</label>
@@ -133,23 +133,18 @@
         <div id="status" class="status"></div>
         
         <div class="footer">
-            You'll receive dark humor at 9 AM & 7 PM daily.<br>
-            No discounts. Just truth. And jokes. Mostly jokes.
+            You'll receive notifications at 9 AM & 7 PM daily.<br>
+            
         </div>
     </div>
-
     <script>
-        // YOUR CLOUDFLARE WORKER URL
         const WORKER_URL = 'https://jeansclub-gist-api.amanyakeith418.workers.dev';
         
-        // Initialize OneSignal
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         OneSignalDeferred.push(async function(OneSignal) {
             await OneSignal.init({
                 appId: "d7c1ea6e-ba97-4e58-8660-178510f826f5",
-                allowLocalhostAsSecureOrigin: true,
             });
-            console.log("JEANS CLUB: OneSignal initialized");
         });
         
         async function subscribeToDarkHumor() {
@@ -170,60 +165,33 @@
             }
             
             statusDiv.className = 'status';
-            statusDiv.innerHTML = '📡 Requesting notification permission...';
+            statusDiv.innerHTML = '📡 Please ALLOW notifications when prompted...';
             
             try {
-                const permission = await OneSignal.Notifications.requestPermission();
+                // Request permission - this shows the browser popup
+                const result = await OneSignal.Notifications.requestPermission();
                 
-                if (permission) {
-                    statusDiv.innerHTML = '✅ Setting up your notifications...';
-                    
-                    // Set phone as External ID in OneSignal
+                if (result) {
+                    // User clicked ALLOW
                     await OneSignal.login(formattedPhone);
                     
-                    // Add user tags
-                    await OneSignal.User.addTags({
-                        phone: formattedPhone,
-                        source: 'web',
-                        joined_date: new Date().toISOString(),
-                        type: 'subscriber'
+                    // Save to Gist
+                    await fetch(WORKER_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phone: formattedPhone })
                     });
                     
-                    // ✅ AUTO-SAVE TO GIST VIA CLOUDFLARE WORKER
-                    try {
-                        const saveResponse = await fetch(WORKER_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ phone: formattedPhone })
-                        });
-                        
-                        const saveResult = await saveResponse.json();
-                        
-                        if (saveResult.success) {
-                            if (saveResult.new) {
-                                statusDiv.innerHTML = '✅ Subscribed to JEANS CLUB Notifications! 🖤<br><br>🎉 Your number has been automatically saved!<br>You will receive notifications at 9 AM and 7 PM daily.';
-                            } else {
-                                statusDiv.innerHTML = '✅ You are already subscribed! 🖤<br><br>You will receive notifications at 9 AM and 7 PM daily.';
-                            }
-                        } else {
-                            statusDiv.innerHTML = '✅ Subscribed! 📝 Your number will be added manually.<br>You will receive notifications at 9 AM and 7 PM daily.';
-                        }
-                    } catch (saveError) {
-                        console.error('Save error:', saveError);
-                        statusDiv.innerHTML = '✅ Subscribed to JEANS CLUB Notifications! 🖤<br><br>You will receive notifications at 9 AM and 7 PM daily.<br><br>📞 Please tell staff your phone number: ' + formattedPhone;
-                    }
-                    
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = '✅ Subscribed! You will receive JEANS CLUB  NOTIFICATIONS at 9 AM and 7 PM daily. 🖤';
                     document.getElementById('phoneNumber').value = '';
-                    
                 } else {
                     statusDiv.className = 'status error';
-                    statusDiv.innerHTML = '❌ Please allow notifications to receive updates. Refresh and try again.';
+                    statusDiv.innerHTML = '❌ You must click ALLOW to receive notifications. Please refresh and try again.';
                 }
-                
             } catch (error) {
-                console.error("Subscription error:", error);
                 statusDiv.className = 'status error';
-                statusDiv.innerHTML = '❌ Something went wrong. Please refresh and try again.';
+                statusDiv.innerHTML = '❌ Error: ' + error.message;
             }
         }
     </script>
