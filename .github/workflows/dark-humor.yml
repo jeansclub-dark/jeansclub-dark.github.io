@@ -2,9 +2,9 @@ name: JEANS CLUB Notifications
 
 on:
   schedule:
-    - cron: '0 9 * * *'   # 9:00 AM daily
-    - cron: '0 13 * * *'  # 1:00 PM daily (afternoon roast)
-    - cron: '0 19 * * *'  # 7:00 PM daily
+    - cron: '0 6 * * *'   # 6:00 UTC = 9:00 AM Uganda
+    - cron: '0 10 * * *'  # 10:00 UTC = 1:00 PM Uganda
+    - cron: '0 16 * * *'  # 16:00 UTC = 7:00 PM Uganda
   workflow_dispatch:
 
 jobs:
@@ -41,7 +41,7 @@ jobs:
             exit 0
           fi
           
-          # Get current hour
+          # Get current hour in UTC
           HOUR=$(date +%H)
           
           # Check for holidays
@@ -61,9 +61,12 @@ jobs:
           elif [ "$MONTH" == "02" ] && [ "$DAY" == "14" ]; then
             MSG="💕 GOOD MORNING DEAR CUSTOMER! 💕 VALENTINE'S DAY! Love is in the air. Your wallet is not. 'Discount for lovers?' Love doesn't pay bills. Money does. Bring money. Leave love. Take JEANS CLUB jeans. Your partner will love you more in new denim. Trust us. The price is the price. Even on Valentine's. 🖤"
           
-          # REGULAR MESSAGES by hour
-          elif [ "$HOUR" -eq 9 ]; then
-            # MORNING JOKES - 9 AM
+          # REGULAR MESSAGES by hour (UTC times converted to Uganda times)
+          # 6 UTC = 9 AM Uganda → Morning
+          # 10 UTC = 1 PM Uganda → Afternoon
+          # 16 UTC = 7 PM Uganda → Evening
+          elif [ "$HOUR" -eq 6 ]; then
+            # MORNING JOKES - 9 AM Uganda
             JOKES=(
               "GOOD MORNING DEAR CUSTOMER! 🌅 Your favorite jeans are still the same price. Yes, we saw you checking yesterday. And the day before. And last week. No, they won't get cheaper. Stop asking. Your therapist is worried about you."
               
@@ -98,8 +101,8 @@ jobs:
             RANDOM_INDEX=$((RANDOM % ${#JOKES[@]}))
             MSG="${JOKES[$RANDOM_INDEX]}"
           
-          elif [ "$HOUR" -eq 13 ]; then
-            # AFTERNOON ROAST JOKES - 1 PM
+          elif [ "$HOUR" -eq 10 ]; then
+            # AFTERNOON ROAST JOKES - 1 PM Uganda
             JOKES=(
               "GOOD AFTERNOON DEAR CUSTOMER! 🕐 1 PM. Lunch break. Perfect time to think about jeans. And debt. Mostly debt. You're scrolling on your iPhone 16 Pro Max while asking for a discount. The audacity is inspiring."
               
@@ -125,7 +128,7 @@ jobs:
             MSG="${JOKES[$RANDOM_INDEX]}"
           
           else
-            # EVENING ROAST JOKES - 7 PM
+            # EVENING ROAST JOKES - 7 PM Uganda (16 UTC)
             JOKES=(
               "GOOD EVENING DEAR CUSTOMER! 🌙 Remember those jeans you saw this morning? Someone bought them. At full price. While you were 'thinking' on your iPhone. Thoughts and prayers. Your loss. Their gain."
               
