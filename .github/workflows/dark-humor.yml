@@ -1,4 +1,4 @@
-name: 🖤 JEANS CLUB - Dark Humor Notifications
+name: JEANS CLUB Notifications
 
 on:
   schedule:
@@ -7,47 +7,48 @@ on:
   workflow_dispatch:
 
 jobs:
-  send-humor:
+  send:
     runs-on: ubuntu-latest
     steps:
-      - name: Get Customers & Send
+      - name: Send Notifications
         env:
-          ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
-          ONESIGNAL_API_KEY: ${{ secrets.ONESIGNAL_API_KEY }}
           GIST_ID: ${{ secrets.GIST_ID }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
+          ONESIGNAL_API_KEY: ${{ secrets.ONESIGNAL_API_KEY }}
         run: |
-          # Fetch customers
+          # Fetch Gist
           RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            https://api.github.com/gists/$GIST_ID)
+            "https://api.github.com/gists/$GIST_ID")
           
-          CUSTOMERS=$(echo $RESPONSE | jq -r '.files["jeansclub-customers.json"].content' | jq -c '.customers')
-          PHONES=$(echo $CUSTOMERS | jq -r '[.[].phone]')
-          COUNT=$(echo $PHONES | jq 'length')
+          # Extract phones
+          PHONES=$(echo "$RESPONSE" | jq -r '.files["jeansclub-customers.json"].content' | jq -r '.customers[].phone' 2>/dev/null | jq -R -s -c 'split("\n")[:-1]')
           
-          echo "📊 Found $COUNT customers"
+          COUNT=$(echo "$PHONES" | jq 'length' 2>/dev/null || echo "0")
           
-          # Morning or evening?
+          echo "Found $COUNT customers"
+          
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No customers"
+            exit 0
+          fi
+          
+          # Send notification
           HOUR=$(date +%H)
           if [ "$HOUR" -eq 9 ]; then
-            TITLE="🖤 JEANS CLUB - MORNING"
-            MESSAGE="🌅 JEANS CLUB: Good morning! Your favorite jeans are still the same price. Yes, we saw you checking. No, they won't get cheaper. Stop asking."
+            MSG="🌅 JEANS CLUB: Good morning! Your favorite jeans are still the same price. Yes, we saw you checking. No, they won't get cheaper. Stop asking."
           else
-            TITLE="🖤 JEANS CLUB - EVENING"
-            MESSAGE="🌙 JEANS CLUB: Evening! You tried to bargain for 5k. You lost the jeans. 5k. For denim you loved. Your negotiation skills cost you. Priceless."
+            MSG="🌙 JEANS CLUB: Evening! You tried to bargain for 5k. You lost the jeans. Your negotiation skills cost you. Priceless."
           fi
           
-          if [ "$COUNT" -gt 0 ]; then
-            curl -X POST https://onesignal.com/api/v1/notifications \
-              -H "Authorization: Basic $ONESIGNAL_API_KEY" \
-              -H "Content-Type: application/json" \
-              -d "{
-                \"app_id\": \"$ONESIGNAL_APP_ID\",
-                \"headings\": {\"en\": \"$TITLE\"},
-                \"contents\": {\"en\": \"$MESSAGE\"},
-                \"include_external_user_ids\": $PHONES
-              }"
-            echo "✅ Sent to $COUNT customers"
-          else
-            echo "⚠️ No customers yet"
-          fi
+          curl -X POST https://onesignal.com/api/v1/notifications \
+            -H "Authorization: Basic $ONESIGNAL_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"app_id\": \"$ONESIGNAL_APP_ID\",
+              \"headings\": {\"en\": \"🖤 JEANS CLUB\"},
+              \"contents\": {\"en\": \"$MSG\"},
+              \"include_external_user_ids\": $PHONES
+            }"
+          
+          echo "Sent to $COUNT customers"
