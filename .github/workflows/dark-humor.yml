@@ -1,54 +1,53 @@
-name: JEANS CLUB Notifications
+name: JEANS CLUB Debug
 
 on:
-  schedule:
-    - cron: '0 9 * * *'
-    - cron: '0 19 * * *'
   workflow_dispatch:
 
 jobs:
-  send:
+  debug:
     runs-on: ubuntu-latest
     steps:
-      - name: Send Notifications
+      - name: Debug Gist Access
         env:
           GIST_ID: ${{ secrets.GIST_ID }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
-          ONESIGNAL_API_KEY: ${{ secrets.ONESIGNAL_API_KEY }}
         run: |
-          # Fetch Gist
-          RESPONSE=$(curl -s -H "Authorization: token $GH_TOKEN" \
+          echo "=== TEST 1: Check if token works ==="
+          RESPONSE=$(curl -s -w "\n%{http_code}" -H "Authorization: token $GH_TOKEN" \
             "https://api.github.com/gists/$GIST_ID")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
           
-          # Extract phones
-          PHONES=$(echo "$RESPONSE" | jq -r '.files["jeansclub-customers.json"].content' | jq -r '.customers[].phone' 2>/dev/null | jq -R -s -c 'split("\n")[:-1]')
+          echo "HTTP Status: $HTTP_CODE"
           
-          COUNT=$(echo "$PHONES" | jq 'length' 2>/dev/null || echo "0")
-          
-          echo "Found $COUNT customers"
-          
-          if [ "$COUNT" -eq 0 ]; then
-            echo "No customers"
-            exit 0
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Token failed! HTTP $HTTP_CODE"
+            exit 1
           fi
           
-          # Send notification
-          HOUR=$(date +%H)
-          if [ "$HOUR" -eq 9 ]; then
-            MSG="🌅 JEANS CLUB: Good morning! Your favorite jeans are still the same price. Yes, we saw you checking. No, they won't get cheaper. Stop asking."
-          else
-            MSG="🌙 JEANS CLUB: Evening! You tried to bargain for 5k. You lost the jeans. Your negotiation skills cost you. Priceless."
-          fi
+          echo "✅ Token works!"
           
-          curl -X POST https://onesignal.com/api/v1/notifications \
-            -H "Authorization: Basic $ONESIGNAL_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"app_id\": \"$ONESIGNAL_APP_ID\",
-              \"headings\": {\"en\": \"🖤 JEANS CLUB\"},
-              \"contents\": {\"en\": \"$MSG\"},
-              \"include_external_user_ids\": $PHONES
-            }"
+          echo ""
+          echo "=== TEST 2: Check Gist content ==="
+          echo "$BODY" | jq '.files | keys'
           
-          echo "✅ Sent to $COUNT customers"
+          echo ""
+          echo "=== TEST 3: Extract customers ==="
+          CONTENT=$(echo "$BODY" | jq -r '.files["jeansclub-customers.json"].content')
+          echo "Raw content: $CONTENT"
+          
+          echo ""
+          echo "=== TEST 4: Count customers ==="
+          echo "$CONTENT" | jq '.customers | length'
+          
+          echo ""
+          echo "=== TEST 5: List phones ==="
+          echo "$CONTENT" | jq -r '.customers[].phone'
+          
+          echo ""
+          echo "=== TEST 6: Create JSON array ==="
+          PHONES=$(echo "$CONTENT" | jq -r '.customers[].phone' | jq -R -s -c 'split("\n")[:-1]')
+          echo "Phones array: $PHONES"
+          
+          COUNT=$(echo "$PHONES" | jq 'length')
+          echo "Count: $COUNT"
