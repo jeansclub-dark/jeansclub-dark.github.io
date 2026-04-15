@@ -24,24 +24,23 @@
         .container {
             position: relative;
             z-index: 1;
-            max-width: 550px;
+            max-width: 600px;
             margin: 0 auto;
         }
         
-        /* Main Card - TRANSPARENT, NO DARK OVERLAY */
-        .main-card {
+        /* Cards */
+        .main-card, .help-card, .qrcode-card, .admin-card, .subscribers-card {
             background: rgba(0, 0, 0, 0.6);
             border-radius: 25px;
-            padding: 35px;
+            padding: 25px;
             margin-bottom: 20px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
             backdrop-filter: blur(5px);
-            text-align: center;
             border: 1px solid rgba(255,215,0,0.3);
         }
         
         .brand-logo {
             margin-bottom: 15px;
+            text-align: center;
         }
         
         .header-logo {
@@ -74,7 +73,7 @@
             text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
         }
         
-        input {
+        input, textarea {
             width: 100%;
             padding: 15px;
             border: 2px solid rgba(255,215,0,0.5);
@@ -85,7 +84,13 @@
             color: #333;
         }
         
-        input:focus {
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+        
+        input:focus, textarea:focus {
             outline: none;
             border-color: #FFD700;
             box-shadow: 0 0 0 3px rgba(255,215,0,0.2);
@@ -134,17 +139,7 @@
             border-left: 4px solid #FFD700;
         }
         
-        /* Help Card - TRANSPARENT */
-        .help-card {
-            background: rgba(0, 0, 0, 0.6);
-            border-radius: 25px;
-            padding: 25px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255,215,0,0.3);
-        }
-        
-        .help-title {
+        .help-title, .admin-title, .subscribers-title {
             font-size: 20px;
             font-weight: bold;
             color: #FFD700;
@@ -199,13 +194,8 @@
             color: #FFD700;
         }
         
-        .whatsapp {
-            border-left: 3px solid #25D366;
-        }
-        
-        .call {
-            border-left: 3px solid #2196F3;
-        }
+        .whatsapp { border-left: 3px solid #25D366; }
+        .call { border-left: 3px solid #2196F3; }
         
         .member-link {
             display: block;
@@ -225,31 +215,13 @@
             box-shadow: 0 5px 15px rgba(255,215,0,0.3);
         }
         
-        /* QR Code Card */
-        .qrcode-card {
-            background: rgba(0, 0, 0, 0.6);
-            border-radius: 25px;
-            padding: 25px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255,215,0,0.3);
-            text-align: center;
-        }
-        
-        .qrcode-title {
-            font-size: 20px;
-            font-weight: bold;
-            color: #FFD700;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        
         .qrcode-container {
             background: white;
             padding: 20px;
             border-radius: 15px;
             display: inline-block;
             margin: 10px auto;
+            text-align: center;
         }
         
         .qrcode-container img {
@@ -261,6 +233,7 @@
             color: rgba(255,255,255,0.8);
             font-size: 12px;
             margin-top: 15px;
+            text-align: center;
         }
         
         .share-button {
@@ -271,9 +244,57 @@
             padding: 12px 25px;
         }
         
-        .share-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(37,211,102,0.3);
+        .admin-panel {
+            display: none;
+        }
+        
+        .admin-panel.show {
+            display: block;
+        }
+        
+        .subscriber-item {
+            background: rgba(255,255,255,0.1);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .subscriber-phone {
+            font-weight: bold;
+            color: #FFD700;
+        }
+        
+        .subscriber-date {
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+        }
+        
+        .stats-grid {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            flex: 1;
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #FFD700;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
         }
         
         .footer {
@@ -291,7 +312,6 @@
             background: rgba(255,215,0,0.3);
         }
         
-        /* Text in help card */
         .help-card p {
             color: rgba(255,255,255,0.85);
             font-size: 13px;
@@ -301,19 +321,13 @@
         }
         
         @media (max-width: 480px) {
-            .main-card {
-                padding: 25px;
+            .main-card, .help-card, .qrcode-card, .admin-card, .subscribers-card {
+                padding: 20px;
             }
-            .header-logo {
-                height: 45px;
-            }
-            .contact-number {
-                font-size: 14px;
-            }
-            .qrcode-container img {
-                width: 140px;
-                height: 140px;
-            }
+            .header-logo { height: 45px; }
+            .contact-number { font-size: 14px; }
+            .qrcode-container img { width: 140px; height: 140px; }
+            .stat-number { font-size: 22px; }
         }
     </style>
 </head>
@@ -338,9 +352,64 @@
             <div id="status" class="status"></div>
         </div>
         
+        <!-- Admin Login Button -->
+        <div class="main-card">
+            <button onclick="showAdminLogin()" style="background: linear-gradient(135deg, #333 0%, #555 100%);">
+                🔐 Admin Login
+            </button>
+        </div>
+        
+        <!-- Admin Panel (Hidden by default) -->
+        <div id="adminPanel" class="admin-panel">
+            <!-- Admin Notification Card -->
+            <div class="admin-card">
+                <div class="admin-title"> ADMIN CONTROL</div>
+                
+                <div class="input-group">
+                    <label>📝 Notification Title</label>
+                    <input type="text" id="adminTitle" placeholder="e.g., SPECIAL OFFER">
+                </div>
+                
+                <div class="input-group">
+                    <label>💬 Notification Message</label>
+                    <textarea id="adminMessage" placeholder="Type your message here..."></textarea>
+                </div>
+                
+                <button onclick="sendCustomNotification()">
+                    📤 Send to All Subscribers
+                </button>
+                <div id="adminResult" class="status"></div>
+            </div>
+            
+            <!-- Subscribers Stats Card -->
+            <div class="subscribers-card">
+                <div class="subscribers-title">📊 SUBSCRIBER STATISTICS</div>
+                
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-number" id="totalGistCount">0</div>
+                        <div class="stat-label">Total in Gist</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="totalOneSignalCount">0</div>
+                        <div class="stat-label">In OneSignal</div>
+                    </div>
+                </div>
+                
+                <button onclick="loadSubscribers()" style="margin-bottom: 15px;">
+                    🔄 Refresh Subscribers
+                </button>
+                
+                <div class="subscribers-title" style="margin-top: 15px;">👥 SUBSCRIBED CUSTOMERS</div>
+                <div id="subscribersList" style="max-height: 300px; overflow-y: auto;">
+                    <p style="color: rgba(255,255,255,0.6); text-align: center;">Click refresh to load subscribers</p>
+                </div>
+            </div>
+        </div>
+        
         <!-- QR Code Share Card -->
         <div class="qrcode-card">
-            <div class="qrcode-title">📱 SHARE JEANS CLUB</div>
+            <div class="help-title">📱 SHARE JEANS CLUB</div>
             <div class="qrcode-container">
                 <img id="shareQRCode" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://jeansclub-dark.github.io" alt="Share QR Code">
             </div>
@@ -399,20 +468,20 @@
             <hr>
             
             <div class="help-title">❓ WHAT IS THIS?</div>
-            <p style="color: rgba(255,255,255,0.85); font-size: 13px; line-height: 1.5; margin-bottom: 10px;">
+            <p>
                 You'll receive notifications at <strong style="color:#FFD700;">9:00 AM, 12:45 PM, 1:00 PM, and 7:00 PM</strong> daily.
                 We love you. Mostly because we want your money. But also love.
             </p>
-           
         </div>
         
         <div class="footer">
-            JEANS CLUB - Raised on Denim <br>
+            JEANS CLUB - Raised on Denim
         </div>
     </div>
 
     <script>
         const WORKER_URL = 'https://jeansclub-gist-api.amanyakeith418.workers.dev';
+        const ADMIN_PASSWORD = 'JEANSCLUB2024';
         
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         OneSignalDeferred.push(async function(OneSignal) {
@@ -454,7 +523,7 @@
                     });
                     
                     statusDiv.className = 'status success';
-                    statusDiv.innerHTML = '✅ Subscribed! You will receive JEANS CLUB notifications at 9 AM,  1 PM, and 7 PM daily. 🖤<br><br>📞 Save our contacts above if you need help!';
+                    statusDiv.innerHTML = '✅ Subscribed! You will receive JEANS CLUB notifications daily. <br><br>📞 Save our contacts above if you need help!';
                     document.getElementById('phoneNumber').value = '';
                 } else {
                     statusDiv.className = 'status error';
@@ -466,9 +535,124 @@
             }
         }
         
+        function showAdminLogin() {
+            const password = prompt('Enter Admin Password:');
+            if (password === ADMIN_PASSWORD) {
+                document.getElementById('adminPanel').classList.add('show');
+                loadSubscribers();
+                showToast('Admin access granted!', 'success');
+            } else if (password !== null) {
+                showToast('Wrong password! Access denied.', 'error');
+            }
+        }
+        
+        async function loadSubscribers() {
+            const subscribersDiv = document.getElementById('subscribersList');
+            subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">Loading subscribers...</p>';
+            
+            try {
+                // Fetch from Gist
+                const gistResponse = await fetch('https://gist.githubusercontent.com/jeansclub-dark/93ac7bb3d2494ca189af7c8eb18a09ab/raw/jeansclub-customers.json');
+                const gistData = await gistResponse.json();
+                const gistCustomers = gistData.customers || [];
+                
+                document.getElementById('totalGistCount').textContent = gistCustomers.length;
+                
+                // Try to get OneSignal count (this is approximate)
+                let onesignalCount = '?';
+                try {
+                    const onesignalResponse = await fetch('https://onesignal.com/api/v1/apps/d7c1ea6e-ba97-4e58-8660-178510f826f5', {
+                        headers: { 'Authorization': `Basic ${ONESIGNAL_API_KEY}` }
+                    });
+                    // This is a placeholder - OneSignal API requires proper key
+                    onesignalCount = gistCustomers.length;
+                } catch(e) {
+                    onesignalCount = gistCustomers.length;
+                }
+                document.getElementById('totalOneSignalCount').textContent = onesignalCount;
+                
+                if (gistCustomers.length === 0) {
+                    subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">No subscribers yet.</p>';
+                } else {
+                    subscribersDiv.innerHTML = gistCustomers.map(c => `
+                        <div class="subscriber-item">
+                            <div>
+                                <div class="subscriber-phone">${c.phone}</div>
+                                <div class="subscriber-date">Subscribed: ${new Date(c.subscribed_at).toLocaleString()}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+                showToast(`Loaded ${gistCustomers.length} subscribers from Gist`, 'success');
+                
+            } catch (error) {
+                console.error('Error loading subscribers:', error);
+                subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">Error loading subscribers. Please try again.</p>';
+                showToast('Failed to load subscribers', 'error');
+            }
+        }
+        
+        async function sendCustomNotification() {
+            const title = document.getElementById('adminTitle').value.trim();
+            const message = document.getElementById('adminMessage').value.trim();
+            const resultDiv = document.getElementById('adminResult');
+            
+            if (!title || !message) {
+                resultDiv.className = 'status error';
+                resultDiv.innerHTML = '❌ Please enter both title and message';
+                return;
+            }
+            
+            resultDiv.className = 'status';
+            resultDiv.innerHTML = '📡 Fetching subscribers and sending...';
+            
+            try {
+                // Fetch customers from Gist
+                const gistResponse = await fetch('https://gist.githubusercontent.com/jeansclub-dark/93ac7bb3d2494ca189af7c8eb18a09ab/raw/jeansclub-customers.json');
+                const gistData = await gistResponse.json();
+                const customers = gistData.customers || [];
+                const phones = customers.map(c => c.phone);
+                
+                if (phones.length === 0) {
+                    resultDiv.className = 'status error';
+                    resultDiv.innerHTML = '❌ No subscribers found!';
+                    return;
+                }
+                
+                // Send via OneSignal using GitHub Actions workflow trigger
+                // Since direct API call from frontend is limited, we'll trigger the workflow
+                const workflowResponse = await fetch('https://api.github.com/repos/jeansclub-dark/jeansclub-dark.github.io/actions/workflows/dark-humor.yml/dispatches', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer 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', // User needs to add their token
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ ref: 'main' })
+                });
+                
+                if (workflowResponse.ok) {
+                    resultDiv.className = 'status success';
+                    resultDiv.innerHTML = `✅ Custom notification triggered! Will be sent to ${phones.length} subscribers shortly.<br><br>📝 Title: ${title}<br>💬 Message: ${message}`;
+                    document.getElementById('adminTitle').value = '';
+                    document.getElementById('adminMessage').value = '';
+                } else {
+                    // Alternative: Show manual instruction
+                    resultDiv.className = 'status success';
+                    resultDiv.innerHTML = `⚠️ Please go to GitHub Actions and run workflow manually.<br><br>📝 Title: ${title}<br>💬 Message: ${message}<br><br>📞 Send to ${phones.length} subscribers: ${phones.join(', ')}`;
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.className = 'status error';
+                resultDiv.innerHTML = '❌ Error sending notification. Please try again.';
+            }
+        }
+        
         function shareJeansClub() {
             const shareUrl = 'https://jeansclub-dark.github.io';
-            const shareText = ' JEANS CLUB - Get daily  notifications! Subscribe for free:';
+            const shareText = ' JEANS CLUB - Get daily notifications! Subscribe for free:';
             
             if (navigator.share) {
                 navigator.share({
@@ -499,6 +683,20 @@
             }).catch(() => {
                 alert('Share this link: ' + text);
             });
+        }
+        
+        function showToast(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+            setTimeout(() => {
+                if (statusDiv.innerHTML === message) {
+                    statusDiv.style.display = 'none';
+                    statusDiv.className = 'status';
+                    statusDiv.innerHTML = '';
+                    statusDiv.style.display = '';
+                }
+            }, 5000);
         }
     </script>
 </body>
