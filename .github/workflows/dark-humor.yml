@@ -2,10 +2,9 @@ name: JEANS CLUB Notifications
 
 on:
   schedule:
-    - cron: '0 6 * * *'   # 6:00 UTC = 9:00 AM Uganda
-    - cron: '35 6 * * *'  # 6:35 UTC = 9:35 AM Uganda (backup)
-    - cron: '0 10 * * *'  # 10:00 UTC = 1:00 PM Uganda
-    - cron: '0 16 * * *'  # 16:00 UTC = 7:00 PM Uganda
+    - cron: '0 9 * * *'
+    - cron: '0 13 * * *'  # 10:00 UTC = 1:00 PM Uganda
+    - cron: '0 19 * * *'
   workflow_dispatch:
 
 jobs:
