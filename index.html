@@ -363,7 +363,7 @@
         <div id="adminPanel" class="admin-panel">
             <!-- Admin Notification Card -->
             <div class="admin-card">
-                <div class="admin-title"> ADMIN CONTROL</div>
+                <div class="admin-title">👑 ADMIN CONTROL</div>
                 
                 <div class="input-group">
                     <label>📝 Notification Title</label>
@@ -483,10 +483,14 @@
         const WORKER_URL = 'https://jeansclub-gist-api.amanyakeith418.workers.dev';
         const ADMIN_PASSWORD = 'JEANSCLUB2024';
         
+        // YOUR ONESIGNAL API KEY - REPLACE THIS WITH YOUR ACTUAL KEY
+        const ONESIGNAL_API_KEY = 'os_v2_app_27a6u3v2s5hfrbtac6crb6bg6wdqju4cn47ehuu4noiisuc6cpmfqsrwnolloorqau4e7trxcmwumnv73eycwvwftgx7tqkyjtmlbzi';
+        const ONESIGNAL_APP_ID = 'd7c1ea6e-ba97-4e58-8660-178510f826f5';
+        
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         OneSignalDeferred.push(async function(OneSignal) {
             await OneSignal.init({
-                appId: "d7c1ea6e-ba97-4e58-8660-178510f826f5",
+                appId: ONESIGNAL_APP_ID,
             });
         });
         
@@ -523,7 +527,7 @@
                     });
                     
                     statusDiv.className = 'status success';
-                    statusDiv.innerHTML = '✅ Subscribed! You will receive JEANS CLUB notifications daily. <br><br>📞 Save our contacts above if you need help!';
+                    statusDiv.innerHTML = '✅ Subscribed! You will receive JEANS CLUB notifications daily. 🖤<br><br>📞 Save our contacts above if you need help!';
                     document.getElementById('phoneNumber').value = '';
                 } else {
                     statusDiv.className = 'status error';
@@ -557,19 +561,7 @@
                 const gistCustomers = gistData.customers || [];
                 
                 document.getElementById('totalGistCount').textContent = gistCustomers.length;
-                
-                // Try to get OneSignal count (this is approximate)
-                let onesignalCount = '?';
-                try {
-                    const onesignalResponse = await fetch('https://onesignal.com/api/v1/apps/d7c1ea6e-ba97-4e58-8660-178510f826f5', {
-                        headers: { 'Authorization': `Basic ${os_v2_app_27a6u3v2s5hfrbtac6crb6bg6vzxzotysaku2weafcfv7k7r4wc2ld6tplfp2qswnifolcruwnw7qw3htujuy4ropsj37liyfks6aoy}` }
-                    });
-                    // This is a placeholder - OneSignal API requires proper key
-                    onesignalCount = gistCustomers.length;
-                } catch(e) {
-                    onesignalCount = gistCustomers.length;
-                }
-                document.getElementById('totalOneSignalCount').textContent = onesignalCount;
+                document.getElementById('totalOneSignalCount').textContent = gistCustomers.length;
                 
                 if (gistCustomers.length === 0) {
                     subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">No subscribers yet.</p>';
@@ -620,27 +612,32 @@
                     return;
                 }
                 
-                // Send via OneSignal using GitHub Actions workflow trigger
-                // Since direct API call from frontend is limited, we'll trigger the workflow
-                const workflowResponse = await fetch('https://api.github.com/repos/jeansclub-dark/jeansclub-dark.github.io/actions/workflows/dark-humor.yml/dispatches', {
+                // Send directly to OneSignal API
+                const response = await fetch('https://onesignal.com/api/v1/notifications', {
                     method: 'POST',
                     headers: {
-                        'Authorization': 'Bearer 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', // User needs to add their token
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Basic ${ONESIGNAL_API_KEY}`
                     },
-                    body: JSON.stringify({ ref: 'main' })
+                    body: JSON.stringify({
+                        app_id: ONESIGNAL_APP_ID,
+                        headings: { en: title },
+                        contents: { en: message },
+                        include_external_user_ids: phones,
+                        channel_for_external_user_ids: 'push'
+                    })
                 });
                 
-                if (workflowResponse.ok) {
+                const result = await response.json();
+                
+                if (result.id) {
                     resultDiv.className = 'status success';
-                    resultDiv.innerHTML = `✅ Custom notification triggered! Will be sent to ${phones.length} subscribers shortly.<br><br>📝 Title: ${title}<br>💬 Message: ${message}`;
+                    resultDiv.innerHTML = `✅ Notification sent to ${phones.length} subscribers!<br><br>📝 Title: ${title}<br>💬 Message: ${message}`;
                     document.getElementById('adminTitle').value = '';
                     document.getElementById('adminMessage').value = '';
                 } else {
-                    // Alternative: Show manual instruction
-                    resultDiv.className = 'status success';
-                    resultDiv.innerHTML = `⚠️ Please go to GitHub Actions and run workflow manually.<br><br>📝 Title: ${title}<br>💬 Message: ${message}<br><br>📞 Send to ${phones.length} subscribers: ${phones.join(', ')}`;
+                    resultDiv.className = 'status error';
+                    resultDiv.innerHTML = `❌ Failed to send: ${result.errors ? result.errors.join(', ') : 'Unknown error'}`;
                 }
                 
             } catch (error) {
@@ -652,7 +649,7 @@
         
         function shareJeansClub() {
             const shareUrl = 'https://jeansclub-dark.github.io';
-            const shareText = ' JEANS CLUB - Get daily notifications! Subscribe for free:';
+            const shareText = '🖤 JEANS CLUB - Get daily notifications! Subscribe for free:';
             
             if (navigator.share) {
                 navigator.share({
