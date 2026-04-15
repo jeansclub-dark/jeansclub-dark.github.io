@@ -64,6 +64,7 @@ jobs:
           
           # REGULAR MESSAGES by hour (UTC times converted to Uganda times)
           # 6 UTC = 9 AM Uganda → Morning
+          # 9 UTC = 12 PM Uganda → Noon
           # 10 UTC = 1 PM Uganda → Afternoon
           # 16 UTC = 7 PM Uganda → Evening
           elif [ "$HOUR" -eq 6 ]; then
@@ -98,6 +99,18 @@ jobs:
               "GOOD MORNING DEAR CUSTOMER! 🏷️ 'Last price?' No. Next question. 'But I'm a regular?' Then you know the price is the price. Regular pain. Regular price. Regular embarrassment. Stop asking."
               
               "GOOD MORNING DEAR CUSTOMER! 🛑 'But at Shop XYZ it's cheaper.' Then why are you here? Oh right. Because JEANS CLUB has better quality. So pay for it or walk. The door is there. Don't let it hit you."
+            )
+            RANDOM_INDEX=$((RANDOM % ${#JOKES[@]}))
+            MSG="${JOKES[$RANDOM_INDEX]}"
+          
+          elif [ "$HOUR" -eq 9 ]; then
+            # NOON JOKES - 12:00-12:59 PM Uganda (9 UTC)
+            JOKES=(
+              "GOOD AFTERNOON DEAR CUSTOMER! 🕛 12:45 PM. You've been 'thinking about it' since 9 AM. 3 hours of thinking. 0 hours of buying. Your brain is tired. Your jeans are tired. We're tired. Buy. 🍽️"
+              
+              "GOOD AFTERNOON DEAR CUSTOMER! 🕛 The sun is high. Your hopes for discounts are low. Your bank account is empty. Your cart is empty. Buy JEANS CLUB denim. Fill the void. 🕳️"
+              
+              "GOOD AFTERNOON DEAR CUSTOMER! 🕛 Lunch time! You're eating chapati while dreaming of JEANS CLUB jeans. Skip lunch. Buy jeans. Hunger is temporary. Style is forever. 🍽️"
             )
             RANDOM_INDEX=$((RANDOM % ${#JOKES[@]}))
             MSG="${JOKES[$RANDOM_INDEX]}"
