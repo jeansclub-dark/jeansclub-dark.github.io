@@ -545,40 +545,40 @@
             }
         }
         
-        async function loadSubscribers() {
-            const subscribersDiv = document.getElementById('subscribersList');
-            subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">Loading subscribers...</p>';
-            
-            try {
-                const gistResponse = await fetch('https://gist.githubusercontent.com/jeansclub-dark/93ac7bb3d2494ca189af7c8eb18a09ab/raw/jeansclub-customers.json');
-                const gistData = await gistResponse.json();
-                const gistCustomers = gistData.customers || [];
-                
-                document.getElementById('totalGistCount').textContent = gistCustomers.length;
-                document.getElementById('totalOneSignalCount').textContent = gistCustomers.length;
-                
-                if (gistCustomers.length === 0) {
-                    subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">No subscribers yet.</p>';
-                } else {
-                    subscribersDiv.innerHTML = gistCustomers.map(c => `
-                        <div class="subscriber-item">
-                            <div>
-                                <div class="subscriber-phone">${c.phone}</div>
-                                <div class="subscriber-date">Subscribed: ${new Date(c.subscribed_at).toLocaleString()}</div>
-                            </div>
-                        </div>
-                    `).join('');
-                }
-                
-                showToast(`Loaded ${gistCustomers.length} subscribers`, 'success');
-                
-            } catch (error) {
-                console.error('Error:', error);
-                subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">Error loading subscribers.</p>';
-                showToast('Failed to load subscribers', 'error');
-            }
+     async function loadSubscribers() {
+    const subscribersDiv = document.getElementById('subscribersList');
+    subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">Loading subscribers...</p>';
+    
+    try {
+        // Only fetch from Gist - remove OneSignal API calls
+        const gistResponse = await fetch('https://gist.githubusercontent.com/jeansclub-dark/93ac7bb3d2494ca189af7c8eb18a09ab/raw/jeansclub-customers.json');
+        const gistData = await gistResponse.json();
+        const gistCustomers = gistData.customers || [];
+        
+        document.getElementById('totalGistCount').textContent = gistCustomers.length;
+        document.getElementById('totalOneSignalCount').textContent = gistCustomers.length; // Just show Gist count
+        
+        if (gistCustomers.length === 0) {
+            subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">No subscribers yet.</p>';
+        } else {
+            subscribersDiv.innerHTML = gistCustomers.map(c => `
+                <div class="subscriber-item">
+                    <div>
+                        <div class="subscriber-phone">${c.phone}</div>
+                        <div class="subscriber-date">Subscribed: ${new Date(c.subscribed_at).toLocaleString()}</div>
+                    </div>
+                </div>
+            `).join('');
         }
         
+        showToast(`Loaded ${gistCustomers.length} subscribers`, 'success');
+        
+    } catch (error) {
+        console.error('Error:', error);
+        subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">Error loading subscribers.</p>';
+        showToast('Failed to load subscribers', 'error');
+    }
+}
         // ============================================================
         // FIXED: Calls Cloudflare Worker (NOT OneSignal directly)
         // ============================================================
