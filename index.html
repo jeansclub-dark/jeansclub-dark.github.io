@@ -552,45 +552,56 @@
                 
                 statusDiv.innerHTML = '📡 Registering your device...';
                 
-                // Step 2: Get the external user ID (this creates the player ID automatically)
+                // Step 2: Set external user ID (this links phone to the device)
                 await OneSignal.login(formattedPhone);
                 
-                // Step 3: Wait a bit for OneSignal to register the device
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                // Step 3: Wait for OneSignal to fully register
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 
-                // Step 4: Get the user ID (player ID) - this is the correct method for v16
+                // Step 4: Get the player ID using the correct v16 API
                 let playerId = null;
-                try {
-                    // Method 1: Get from OneSignal
-                    const userId = await OneSignal.User.getUserId();
-                    if (userId) {
-                        playerId = userId;
-                    }
-                } catch (e) {
-                    console.log('Could not get userId directly:', e);
-                }
                 
-                // Method 2: Alternative way to get player ID
-                if (!playerId) {
+                // Method 1: Get from OneSignal User module
+                if (OneSignal.User) {
                     try {
-                        const subscription = await OneSignal.User.PushSubscription.getId();
+                        // Get the subscription object
+                        const subscription = OneSignal.User.pushSubscription;
                         if (subscription) {
-                            playerId = subscription;
+                            playerId = subscription.getId();
+                            console.log('Got player ID from subscription:', playerId);
                         }
                     } catch (e) {
-                        console.log('Could not get subscription ID:', e);
+                        console.log('Error getting from subscription:', e);
                     }
                 }
                 
-                console.log('Player ID:', playerId);
+                // Method 2: Alternative - get from the main object
+                if (!playerId && OneSignal.getUserId) {
+                    try {
+                        playerId = await OneSignal.getUserId();
+                        console.log('Got player ID from getUserId:', playerId);
+                    } catch (e) {
+                        console.log('Error getting from getUserId:', e);
+                    }
+                }
                 
-                // Step 5: Save to your worker with player_id (if we got one)
+                // Method 3: Last resort - use a temporary ID
+                if (!playerId) {
+                    playerId = 'temp_' + Date.now();
+                    console.log('Using temporary player ID:', playerId);
+                }
+                
+                console.log('Final Player ID:', playerId);
+                
+                // Step 5: Save to your worker with player_id
+                statusDiv.innerHTML = '📡 Saving subscription...';
+                
                 const response = await fetch(WORKER_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         phone: formattedPhone,
-                        player_id: playerId || 'pending',
+                        player_id: playerId,
                         subscribed_at: new Date().toISOString()
                     })
                 });
@@ -642,7 +653,7 @@
                             <div>
                                 <div class="subscriber-phone">${c.phone}</div>
                                 <div class="subscriber-date">
-                                    ${c.player_id && c.player_id !== 'pending' ? '<span class="badge-active">✅ Active</span>' : '<span class="badge-inactive">❌ Inactive (needs resubscribe)</span>'}<br>
+                                    ${c.player_id && !c.player_id.startsWith('temp_') ? '<span class="badge-active">✅ Active</span>' : '<span class="badge-inactive">❌ Inactive (needs resubscribe)</span>'}<br>
                                     Subscribed: ${new Date(c.subscribed_at).toLocaleString()}
                                     ${c.last_seen ? `<br>Last seen: ${new Date(c.last_seen).toLocaleString()}` : ''}
                                 </div>
