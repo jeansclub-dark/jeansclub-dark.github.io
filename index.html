@@ -325,6 +325,7 @@
             border-radius: 12px;
             font-size: 10px;
             font-weight: bold;
+            display: inline-block;
         }
         
         .badge-inactive {
@@ -333,6 +334,7 @@
             border-radius: 12px;
             font-size: 10px;
             font-weight: bold;
+            display: inline-block;
         }
         
         @media (max-width: 480px) {
@@ -498,11 +500,15 @@
         const WORKER_URL = 'https://jeansclub-gist-api.amanyakeith418.workers.dev';
         const ADMIN_PASSWORD = 'JEANSCLUB2024';
         
+        let onesignalInitialized = false;
+        
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         OneSignalDeferred.push(async function(OneSignal) {
             await OneSignal.init({
                 appId: "d7c1ea6e-ba97-4e58-8660-178510f826f5",
             });
+            onesignalInitialized = true;
+            console.log('OneSignal initialized');
         });
         
         async function subscribeToDarkHumor() {
@@ -526,6 +532,15 @@
             statusDiv.innerHTML = '📡 Requesting permission...';
             
             try {
+                // Wait for OneSignal to be ready
+                if (!onesignalInitialized) {
+                    statusDiv.innerHTML = '📡 Waiting for OneSignal to initialize...';
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+                
+                // Get the OneSignal instance
+                const OneSignal = window.OneSignal;
+                
                 // Step 1: Request permission
                 const permissionGranted = await OneSignal.Notifications.requestPermission();
                 
@@ -535,29 +550,47 @@
                     return;
                 }
                 
-                statusDiv.innerHTML = '📡 Getting device ID...';
+                statusDiv.innerHTML = '📡 Registering your device...';
                 
-                // Step 2: Get the player ID (device token)
-                const playerId = await OneSignal.getUserId();
+                // Step 2: Get the external user ID (this creates the player ID automatically)
+                await OneSignal.login(formattedPhone);
                 
+                // Step 3: Wait a bit for OneSignal to register the device
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Step 4: Get the user ID (player ID) - this is the correct method for v16
+                let playerId = null;
+                try {
+                    // Method 1: Get from OneSignal
+                    const userId = await OneSignal.User.getUserId();
+                    if (userId) {
+                        playerId = userId;
+                    }
+                } catch (e) {
+                    console.log('Could not get userId directly:', e);
+                }
+                
+                // Method 2: Alternative way to get player ID
                 if (!playerId) {
-                    throw new Error('Could not get device ID');
+                    try {
+                        const subscription = await OneSignal.User.PushSubscription.getId();
+                        if (subscription) {
+                            playerId = subscription;
+                        }
+                    } catch (e) {
+                        console.log('Could not get subscription ID:', e);
+                    }
                 }
                 
                 console.log('Player ID:', playerId);
                 
-                statusDiv.innerHTML = '📡 Registering your number...';
-                
-                // Step 3: Set external user ID
-                await OneSignal.login(formattedPhone);
-                
-                // Step 4: Save to your worker with player_id
+                // Step 5: Save to your worker with player_id (if we got one)
                 const response = await fetch(WORKER_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         phone: formattedPhone,
-                        player_id: playerId,
+                        player_id: playerId || 'pending',
                         subscribed_at: new Date().toISOString()
                     })
                 });
@@ -568,11 +601,6 @@
                     statusDiv.className = 'status success';
                     statusDiv.innerHTML = '✅ Subscribed! You will receive JEANS CLUB notifications daily. 🖤';
                     document.getElementById('phoneNumber').value = '';
-                    
-                    // Send a test notification
-                    setTimeout(async () => {
-                        await OneSignal.Notifications.addTrigger('welcome', formattedPhone);
-                    }, 1000);
                 } else {
                     throw new Error(result.error || 'Failed to save subscription');
                 }
@@ -614,7 +642,7 @@
                             <div>
                                 <div class="subscriber-phone">${c.phone}</div>
                                 <div class="subscriber-date">
-                                    ${c.player_id ? '<span class="badge-active">✅ Active</span>' : '<span class="badge-inactive">❌ Inactive (needs resubscribe)</span>'}<br>
+                                    ${c.player_id && c.player_id !== 'pending' ? '<span class="badge-active">✅ Active</span>' : '<span class="badge-inactive">❌ Inactive (needs resubscribe)</span>'}<br>
                                     Subscribed: ${new Date(c.subscribed_at).toLocaleString()}
                                     ${c.last_seen ? `<br>Last seen: ${new Date(c.last_seen).toLocaleString()}` : ''}
                                 </div>
