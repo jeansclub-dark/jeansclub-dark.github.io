@@ -511,118 +511,6 @@
             console.log('OneSignal initialized');
         });
         
-        async function subscribeToDarkHumor() {
-            const phone = document.getElementById('phoneNumber').value.trim();
-            const statusDiv = document.getElementById('status');
-            
-            if (!phone) {
-                statusDiv.className = 'status error';
-                statusDiv.innerHTML = '❌ Please enter your phone number';
-                return;
-            }
-            
-            let formattedPhone = phone;
-            if (phone.startsWith('0')) {
-                formattedPhone = '+256' + phone.substring(1);
-            } else if (!phone.startsWith('+')) {
-                formattedPhone = '+256' + phone;
-            }
-            
-            statusDiv.className = 'status';
-            statusDiv.innerHTML = '📡 Requesting permission...';
-            
-            try {
-                // Wait for OneSignal to be ready
-                if (!onesignalInitialized) {
-                    statusDiv.innerHTML = '📡 Waiting for OneSignal to initialize...';
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                }
-                
-                // Get the OneSignal instance
-                const OneSignal = window.OneSignal;
-                
-                // Step 1: Request permission
-                const permissionGranted = await OneSignal.Notifications.requestPermission();
-                
-                if (!permissionGranted) {
-                    statusDiv.className = 'status error';
-                    statusDiv.innerHTML = '❌ You must click ALLOW to receive notifications';
-                    return;
-                }
-                
-                statusDiv.innerHTML = '📡 Registering your device...';
-                
-                // Step 2: Set external user ID (this links phone to the device)
-                await OneSignal.login(formattedPhone);
-                
-                // Step 3: Wait for OneSignal to fully register
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                // Step 4: Get the player ID using the correct v16 API
-                let playerId = null;
-                
-                // Method 1: Get from OneSignal User module
-                if (OneSignal.User) {
-                    try {
-                        // Get the subscription object
-                        const subscription = OneSignal.User.pushSubscription;
-                        if (subscription) {
-                            playerId = subscription.getId();
-                            console.log('Got player ID from subscription:', playerId);
-                        }
-                    } catch (e) {
-                        console.log('Error getting from subscription:', e);
-                    }
-                }
-                
-                // Method 2: Alternative - get from the main object
-                if (!playerId && OneSignal.getUserId) {
-                    try {
-                        playerId = await OneSignal.getUserId();
-                        console.log('Got player ID from getUserId:', playerId);
-                    } catch (e) {
-                        console.log('Error getting from getUserId:', e);
-                    }
-                }
-                
-                // Method 3: Last resort - use a temporary ID
-                if (!playerId) {
-                    playerId = 'temp_' + Date.now();
-                    console.log('Using temporary player ID:', playerId);
-                }
-                
-                console.log('Final Player ID:', playerId);
-                
-                // Step 5: Save to your worker with player_id
-                statusDiv.innerHTML = '📡 Saving subscription...';
-                
-                const response = await fetch(WORKER_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        phone: formattedPhone,
-                        player_id: playerId,
-                        subscribed_at: new Date().toISOString()
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    statusDiv.className = 'status success';
-                    statusDiv.innerHTML = '✅ Subscribed! You will receive JEANS CLUB notifications daily. 🖤';
-                    document.getElementById('phoneNumber').value = '';
-                } else {
-                    throw new Error(result.error || 'Failed to save subscription');
-                }
-                
-            } catch (error) {
-                console.error('Subscription error:', error);
-                statusDiv.className = 'status error';
-                statusDiv.innerHTML = '❌ Error: ' + error.message;
-            }
-        }
-        
         function showAdminLogin() {
             const password = prompt('Enter Admin Password:');
             if (password === ADMIN_PASSWORD) {
@@ -633,7 +521,128 @@
                 showToast('Wrong password! Access denied.', 'error');
             }
         }
+        async function subscribeToDarkHumor() {
+    const phone = document.getElementById('phoneNumber').value.trim();
+    const statusDiv = document.getElementById('status');
+    
+    if (!phone) {
+        statusDiv.className = 'status error';
+        statusDiv.innerHTML = '❌ Please enter your phone number';
+        return;
+    }
+    
+    let formattedPhone = phone;
+    if (phone.startsWith('0')) {
+        formattedPhone = '+256' + phone.substring(1);
+    } else if (!phone.startsWith('+')) {
+        formattedPhone = '+256' + phone;
+    }
+    
+    statusDiv.className = 'status';
+    statusDiv.innerHTML = '📡 Initializing OneSignal...';
+    
+    try {
+        // Wait for OneSignal to be fully ready
+        if (!window.OneSignal || !window.OneSignal.User) {
+            statusDiv.innerHTML = '⏳ Waiting for OneSignal SDK...';
+            await new Promise(resolve => setTimeout(resolve, 3000));
+        }
         
+        const OneSignal = window.OneSignal;
+        
+        // Step 1: Request permission
+        statusDiv.innerHTML = '🔔 Please click ALLOW when prompted...';
+        const permissionGranted = await OneSignal.Notifications.requestPermission();
+        
+        if (!permissionGranted) {
+            statusDiv.className = 'status error';
+            statusDiv.innerHTML = '❌ You must click ALLOW to receive notifications';
+            return;
+        }
+        
+        // Step 2: Set external user ID
+        statusDiv.innerHTML = '📝 Registering your number...';
+        await OneSignal.login(formattedPhone);
+        
+        // Step 3: Wait for OneSignal to create the player
+        statusDiv.innerHTML = '⏳ Finalizing subscription...';
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Step 4: Get the REAL player ID (NOT temporary)
+        let realPlayerId = null;
+        
+        // Try multiple methods to get the player ID
+        try {
+            // Method 1: Direct from OneSignal
+            if (OneSignal.User && OneSignal.User.pushSubscription) {
+                const subscription = OneSignal.User.pushSubscription;
+                realPlayerId = await subscription.getId();
+                console.log('Method 1 - Subscription ID:', realPlayerId);
+            }
+        } catch (e) { console.log('Method 1 failed:', e); }
+        
+        if (!realPlayerId) {
+            try {
+                // Method 2: From the main object
+                realPlayerId = await OneSignal.getUserId();
+                console.log('Method 2 - getUserId:', realPlayerId);
+            } catch (e) { console.log('Method 2 failed:', e); }
+        }
+        
+        if (!realPlayerId) {
+            try {
+                // Method 3: From the worker
+                const workers = await OneSignal.User.getPushSubscriptions();
+                if (workers && workers[0]) {
+                    realPlayerId = workers[0].id;
+                    console.log('Method 3 - from subscriptions:', realPlayerId);
+                }
+            } catch (e) { console.log('Method 3 failed:', e); }
+        }
+        
+        // If still no player ID, show error
+        if (!realPlayerId || realPlayerId.startsWith('temp_')) {
+            statusDiv.className = 'status error';
+            statusDiv.innerHTML = '❌ Could not get device ID. Please:<br>1. Refresh the page<br>2. Clear browser cache<br>3. Try a different browser (Chrome/Firefox)<br>4. Disable any ad blockers';
+            return;
+        }
+        
+        console.log('✅ REAL Player ID obtained:', realPlayerId);
+        
+        // Step 5: Save to your worker
+        statusDiv.innerHTML = '💾 Saving subscription...';
+        
+        const response = await fetch(WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                phone: formattedPhone,
+                player_id: realPlayerId,  // This will be a real ID like "12345-abcde-67890"
+                subscribed_at: new Date().toISOString()
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            statusDiv.className = 'status success';
+            statusDiv.innerHTML = '✅ Successfully subscribed! You will receive JEANS CLUB notifications. 🖤';
+            document.getElementById('phoneNumber').value = '';
+            
+            // Test notification
+            setTimeout(async () => {
+                await OneSignal.Notifications.addTrigger('welcome', formattedPhone);
+            }, 1000);
+        } else {
+            throw new Error(result.error || 'Failed to save subscription');
+        }
+        
+    } catch (error) {
+        console.error('Subscription error:', error);
+        statusDiv.className = 'status error';
+        statusDiv.innerHTML = '❌ Error: ' + error.message + '<br><br>💡 Try using Google Chrome browser';
+    }
+}
         async function loadSubscribers() {
             const subscribersDiv = document.getElementById('subscribersList');
             subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">Loading subscribers...</p>';
