@@ -12,36 +12,11 @@ jobs:
   send:
     runs-on: ubuntu-latest
     steps:
-      - name: Send Notifications
+      - name: Send Notifications to All Subscribers
         env:
           ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
           ONESIGNAL_API_KEY: ${{ secrets.ONESIGNAL_API_KEY }}
         run: |
-          # Use the RAW Gist URL
-          RAW_URL="https://gist.githubusercontent.com/jeansclub-dark/93ac7bb3d2494ca189af7c8eb18a09ab/raw/jeansclub-customers.json"
-          
-          echo "Fetching from: $RAW_URL"
-          
-          # Fetch the raw content
-          CONTENT=$(curl -s "$RAW_URL")
-          
-          if [ -z "$CONTENT" ]; then
-            echo "❌ Failed to fetch Gist content"
-            exit 1
-          fi
-          
-          # Extract phone numbers
-          PHONES=$(echo "$CONTENT" | jq -r '.customers[].phone' | jq -R -s -c 'split("\n")[:-1]')
-          COUNT=$(echo "$PHONES" | jq 'length')
-          
-          echo "Found $COUNT customers"
-          echo "Phones: $PHONES"
-          
-          if [ "$COUNT" -eq 0 ]; then
-            echo "No customers to notify"
-            exit 0
-          fi
-          
           # Get current hour in UTC
           HOUR=$(date +%H)
           
@@ -62,131 +37,87 @@ jobs:
           elif [ "$MONTH" == "02" ] && [ "$DAY" == "14" ]; then
             MSG="💕 GOOD MORNING DEAR CUSTOMER! 💕 VALENTINE'S DAY! Love is in the air. Your wallet is not. 'Discount for lovers?' Love doesn't pay bills. Money does. Bring money. Leave love. Take JEANS CLUB jeans. Your partner will love you more in new denim. Trust us. The price is the price. Even on Valentine's. 🖤"
           
-          # REGULAR MESSAGES by hour (UTC times converted to Uganda times)
-          # 6 UTC = 9 AM Uganda → Morning
-          # 9 UTC = 12 PM Uganda → Noon
-          # 10 UTC = 1 PM Uganda → Afternoon
-          # 16 UTC = 7 PM Uganda → Evening
+          # REGULAR MESSAGES by hour
           elif [ "$HOUR" -eq 6 ]; then
-            # MORNING JOKES - 9 AM Uganda
             JOKES=(
               "GOOD MORNING DEAR CUSTOMER! 🌅 Your favorite jeans are still the same price. Yes, we saw you checking yesterday. And the day before. And last week. No, they won't get cheaper INFACT they are only getting more expensive so buy quickly."
-              
               "GOOD MORNING DEAR CUSTOMER! ☀️ You spent 2 million on an iPhone last month. But you're bargaining for 5k off jeans? mbu my budget is tight WHO CARES Make it make sense"
-              
               "GOOD MORNING DEAR CUSTOMER! 🌄 You keep saying  'Why are jeans so expensive?' Us: 'Why is your rent so expensive?' Same answer. Quality costs. Go argue with your landlord. At least our jeans won't evict you."
-              
               "GOOD MORNING DEAR CUSTOMER! ⏰ 9 AM. You're here. Again. Staring at the same jeans. For the 5th time this month. Buy them or don't. We're tired. Your jeans are tired. Even the mannequin is judging you."
-              
               "GOOD MORNING DEAR CUSTOMER! 💀 Your jeans from 2017 just filed for divorce. They're tired of your body. They want alimony. Get new JEANS CLUB denim before they take half your closet in court."
-              
               "GOOD MORNING DEAR CUSTOMER! 👻 That ka mobile money loan is haunting you the way you ask for deposits from us and then spend a year without finishing payment hehe feel it and know how we suffer also."
-              
               "GOOD MORNING DEAR CUSTOMER! 🎪 Definition of a Wholesaler,,Awholesaler is any person short or tall who buys alot for resale not anyone who thinks buying for themselves jeans and shirts they can out bargain us mbu NANGE NDI MUSIBUZI ..hmm."
-              
               "GOOD MORNING DEAR CUSTOMER! 📉 Your bank account is down. Your standards are up. This doesn't work. Lower your standards. Or raise your income. Either way, JEANS CLUB jeans cost money. Real money. Not wishes."
-              
               "GOOD MORNING DEAR CUSTOMER! ⚰️ Your style died 6 months ago. JEANS CLUB is at the funeral. Wearing black. Our black. Which you can buy. For full price. Show respect. Show money. Or stay dead."
-              
               "GOOD MORNING DEAR CUSTOMER! 🔮 We predict new jeans in your future. We also predict you complaining about the price. Some things never change. Your poverty. Our prices. Tradition."
-              
               "GOOD MORNING DEAR CUSTOMER! 📱 You upgrade your iPhone every year. 3.5 million. No questions asked. But JEANS CLUB jeans? 'Too expensive.' Make it make sense. Apple is about to put their logo on a rock and you will buy....hmmm. "
-              
               "GOOD MORNING DEAR CUSTOMER! 🏃‍♂️ You ran to Kampala for new stock. Begged us to call you. We called. You came. You saw the price. You left. 'I'll think about it.' Think about what? Your life choices? Your financial irresponsibility? Think faster. The jeans won't wait."
-              
               "GOOD MORNING DEAR CUSTOMER! 🗣️ 'When is new stock?' It arrived yesterday. You didn't buy. 'What about next stock?' It's the same. Same price. Same quality. Same you. Same excuses. Different day. Same result. No jeans."
-              
               "GOOD MORNING DEAR CUSTOMER! 🏷️ 'Last price?' No. Next question. 'But I'm a regular?' Then you know the price is the price. Regular pain. Regular price. Regular embarrassment. Stop asking."
-              
               "GOOD MORNING DEAR CUSTOMER! 🛑 We keep hearing mbu at  Shop XYZ it's cheaper.' Then why are you here? Oh right. Because JEANS CLUB has better quality. So pay for it or follow the route that brought you cause MUTAMA . The door is there. Don't let it hit you."
             )
             RANDOM_INDEX=$((RANDOM % ${#JOKES[@]}))
             MSG="${JOKES[$RANDOM_INDEX]}"
           
           elif [ "$HOUR" -eq 9 ]; then
-            # NOON JOKES - 12:00-12:59 PM Uganda (9 UTC)
             JOKES=(
               "GOOD AFTERNOON DEAR CUSTOMER! 🕛 12:45 PM. You've been 'thinking about it' since 9 AM. 3 hours of thinking. 0 hours of buying. Your brain is tired. Your jeans are tired. We're tired. Buy. 🍽️"
-              
               "GOOD AFTERNOON DEAR CUSTOMER! 🕛 The sun is high. Your hopes for discounts are low. Your bank account is empty. Your cart is empty. Buy JEANS CLUB denim. Fill the void. 🕳️"
-              
               "GOOD AFTERNOON DEAR CUSTOMER! 🕛 Lunch time! You're eating kikomando becuse your life is basically a struggle  Skip lunch. Buy jeans. Hunger is temporary. Style is forever. 🍽️"
             )
             RANDOM_INDEX=$((RANDOM % ${#JOKES[@]}))
             MSG="${JOKES[$RANDOM_INDEX]}"
           
           elif [ "$HOUR" -eq 10 ]; then
-            # AFTERNOON ROAST JOKES - 1 PM Uganda
             JOKES=(
               "GOOD AFTERNOON DEAR CUSTOMER!  Lunch break. Perfect time to think about jeans. And debt. Mostly debt. You're scrolling on your iPhone 16 Pro Max while asking for a discount. The audacity is inspiring."
-              
               "GOOD AFTERNOON DEAR CUSTOMER!  You're demanding New stock like you are a Shareholder. WHEN IS IT COMING? It came. You didn't buy you should be asking for damaged pieces on discount that you can afford yet you are here pretending hmm . "
-              
               "GOOD AFTERNOON DEAR CUSTOMER!  You want premium quality. You want designer fit. You want Italian denim. You basically want whatever you see your celeb wearing on tiktok mbu do you have shredded two piece ...plitzz . Delusional. But we love you. Go to Owino. They'll sell you dreams. And fake labels. We sell reality. It costs more."
-              
               "GOOD AFTERNOON DEAR CUSTOMER!  'The logo is too small.' Go to Owino. They'll sew a billboard on your back. 'The logo is too big.' Also Owino. JEANS CLUB isn't customizing for your indecisiveness. Buy or bye."
-              
               "GOOD AFTERNOON DEAR CUSTOMER! 🕔 You keep saying mbu 'I'll bring more people.' We've heard this since 1962. Still waiting. Still alone. Still asking for discounts. Where are these people? In your imagination? They're as real as your budget."
-              
               "GOOD AFTERNOON DEAR CUSTOMER! 💰 You spent 1.2 million on a phone that will be obsolete in a year. JEANS CLUB jeans last 10 years. But our prices are the problem? The math isn't mathing. Your priorities are priority-ing wrong."
-              
               "GOOD AFTERNOON DEAR CUSTOMER! 📞 'Can you do layaway?' This isn't 1995. 'Can I pay in installments?' This isn't your landlord. Pay. Take. Leave. Simple. Three steps. Even you can manage."
-              
               "GOOD AFTERNOON DEAR CUSTOMER! 🎯 We keep hearing mbu today'I'll buy two.' Good. That's two full prices. 'No discount?' We are JEANS CLUB UGANDA LIMITED NOT JEANS CLUB UGANDA CHARITY.  Pay up."
-              
               "GOOD AFTERNOON DEAR CUSTOMER! 🏪 You keep saying mbu 'What's your best price?' Our best price is on the tag. 'No, I mean BEST price.' That is the best price. The only price. The holy price. Amen. Go to Owino for negotiation practice."
-              
               "GOOD AFTERNOON DEAR CUSTOMER! 🔥 You complain about new stock prices. But when we had old stock, you said 'waiting for new.' Now new is here. Still complaining. Nothing makes you happy. Except maybe free jeans. Which don't exist."
             )
             RANDOM_INDEX=$((RANDOM % ${#JOKES[@]}))
             MSG="${JOKES[$RANDOM_INDEX]}"
           
           else
-            # EVENING ROAST JOKES - 7 PM Uganda (16 UTC)
             JOKES=(
               "GOOD EVENING DEAR CUSTOMER! 🌙 Remember those jeans you saw this morning? Someone bought them. At full price. While you were 'thinking' on your iPhone. Thoughts and prayers. Your loss. Their gain."
-              
               "GOOD EVENING DEAR CUSTOMER! 🌃 7 PM. You spent all day thinking about 20k. You wasted 20k worth of time. Time is money. You wasted both. Just buy the JEANS CLUB denim tomorrow. Or don't. We're tired."
-              
               "GOOD EVENING DEAR CUSTOMER! 🌙 'I should have bought them.' Yes. 'Now they're gone.' Yes. 'I regret it.' Yes. Anything else? 'The price was fair.' NOW you realize. After someone else is wearing your jeans. Sad. Hilarious. Avoidable."
-              
               "GOOD EVENING DEAR CUSTOMER! 🌃 The sun set. Your chance to buy those jeans also set. Tomorrow new JEANS CLUB stock. New prices. Same excuses. Same you. Same empty hands. The cycle continues. Forever."
-              
               "GOOD EVENING DEAR CUSTOMER! 💀 Your jeans are plotting against you. They want replacement. They've contacted lawyers. Settle out of court. Buy new jeans. Avoid litigation. Your old jeans have a better lawyer than you have money."
-              
               "GOOD EVENING DEAR CUSTOMER! 👻 Your fashion sense is haunting this store. Please exorcise it. With new jeans. Holy jeans. Blessed by the discount gods (who don't exist). Pay. Be free. Be stylish. Be something."
-              
               "GOOD EVENING DEAR CUSTOMER! 🎪 The Owino Board of directors thought they lost a customer when you first entered JEANS CLUB but sincerely the way you bargain for things as private as boxers hmm go back to OWINO We are tired ."
-              
               "GOOD EVENING DEAR CUSTOMER! 📉 When will you start depositing cash in the the bulk section side of the bank ooh wait i know when you buy some classy shirts from JEANS CLUB and look amazing for your next job interview just saying..."
-              
               "GOOD EVENING DEAR CUSTOMER! 'Let me ask my friend.' Your friend is broke too. That's why you're friends. Two broke people. One opinion. Still broke. Still no JEANS CLUB denim. Still asking for discounts. Still embarrassing."
-              
               "GOOD EVENING DEAR CUSTOMER! 🔮 We see regret in your future. The regret of not buying those jeans today. The prophecy is clear. The price is not changing. Your excuses are not convincing. The jeans are not waiting."
-              
               "GOOD EVENING DEAR CUSTOMER! Make this make sense, You'll spend your ka last 50k on pizza for a ka girl who doesnt even like you But atleast JEANS CLUB likes your MONEY i mean YOU "
-              
               "GOOD EVENING DEAR CUSTOMER! 📱 That  iPhone 15 Pro Max you show off while walking has a better camera than your life choices. You take pictures of yourself in old jeans. The camera captures the truth. The truth is sad. Buy new jeans. Look better in photos. Your Instagram will thank you."
             )
             RANDOM_INDEX=$((RANDOM % ${#JOKES[@]}))
             MSG="${JOKES[$RANDOM_INDEX]}"
           fi
           
-          # Send notification
+          # Send notification to ALL subscribed users (NOT just Gist numbers)
           RESPONSE=$(curl -s -X POST https://onesignal.com/api/v1/notifications \
             -H "Authorization: Basic $ONESIGNAL_API_KEY" \
             -H "Content-Type: application/json" \
-            -d "{
-              \"app_id\": \"$ONESIGNAL_APP_ID\",
-              \"headings\": {\"en\": \" JEANS CLUB\"},
-              \"contents\": {\"en\": \"$MSG\"},
-              \"include_external_user_ids\": $PHONES
-            }")
+            -d '{
+              "app_id": "'"$ONESIGNAL_APP_ID"'",
+              "headings": {"en": "👖 JEANS CLUB"},
+              "contents": {"en": "'"$MSG"'"},
+              "included_segments": ["Subscribed Users"]
+            }')
           
           echo "OneSignal response: $RESPONSE"
           
           if echo "$RESPONSE" | jq -e '.id' > /dev/null 2>&1; then
-            echo "✅ Notification sent to $COUNT customers"
+            echo "✅ Notification sent to ALL subscribers"
           else
             echo "❌ Failed to send"
             exit 1
