@@ -23,8 +23,6 @@
             backdrop-filter: blur(5px);
             border: 1px solid rgba(255,215,0,0.3);
         }
-        .header-logo { height: 60px; display: block; margin: 0 auto 15px; }
-        .tagline { text-align: center; color: #FFD700; font-size: 12px; margin-bottom: 25px; }
         input, textarea {
             width: 100%;
             padding: 15px;
@@ -48,33 +46,41 @@
             padding: 15px;
             border-radius: 12px;
             display: none;
+            font-size: 14px;
         }
         .status.success { background: rgba(40, 167, 69, 0.85); color: white; display: block; }
         .status.error { background: rgba(220, 53, 69, 0.85); color: white; display: block; }
+        .status.info { background: rgba(0, 123, 255, 0.85); color: white; display: block; }
         .admin-panel { display: none; }
         .admin-panel.show { display: block; }
-        .badge-active { background: rgba(40, 167, 69, 0.8); padding: 3px 8px; border-radius: 12px; font-size: 10px; }
-        .badge-inactive { background: rgba(220, 53, 69, 0.8); padding: 3px 8px; border-radius: 12px; font-size: 10px; }
-        .subscriber-item {
-            background: rgba(255,255,255,0.1);
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 10px;
+        .debug-console {
+            background: #1e1e1e;
+            color: #0f0;
+            font-family: monospace;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 11px;
+            max-height: 200px;
+            overflow-y: auto;
         }
-        .stats-grid { display: flex; gap: 15px; margin-bottom: 20px; }
-        .stat-box { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; flex: 1; text-align: center; }
-        .stat-number { font-size: 28px; font-weight: bold; color: #FFD700; }
+        .debug-line { margin: 3px 0; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="card">
-            <img src="https://i.ibb.co/rKnKMscG/67556a31-02c7-4182-a1d8-c12667bd7136.jpg" class="header-logo">
-            <div class="tagline">RAISED ON DENIM</div>
+            <h2 style="color:#FFD700; text-align:center;">JEANS CLUB</h2>
+            <p style="color:white; text-align:center; margin-bottom:20px;">RAISED ON DENIM</p>
             
             <input type="tel" id="phoneNumber" placeholder="+256 772 558 913">
             <button onclick="subscribeToDarkHumor()">🔔 Subscribe to Notifications</button>
             <div id="status" class="status"></div>
+            
+            <!-- Debug Console -->
+            <div class="debug-console" id="debugConsole">
+                <div class="debug-line">📡 Waiting for actions...</div>
+            </div>
         </div>
         
         <div class="card">
@@ -92,12 +98,8 @@
             
             <div class="card">
                 <h3 style="color:#FFD700;">📊 SUBSCRIBER STATISTICS</h3>
-                <div class="stats-grid">
-                    <div class="stat-box"><div class="stat-number" id="totalGistCount">0</div><div>Total</div></div>
-                    <div class="stat-box"><div class="stat-number" id="totalOneSignalCount">0</div><div>Active</div></div>
-                </div>
-                <button onclick="loadSubscribers()">🔄 Refresh</button>
-                <div id="subscribersList" style="margin-top: 15px; max-height: 300px; overflow-y: auto;"></div>
+                <div id="subscribersList" style="margin-top: 15px;"></div>
+                <button onclick="loadSubscribers()" style="margin-top:10px;">🔄 Refresh</button>
             </div>
         </div>
     </div>
@@ -106,14 +108,35 @@
         const WORKER_URL = 'https://jeansclub-gist-api.amanyakeith418.workers.dev';
         const ADMIN_PASSWORD = 'JEANSCLUB2024';
         
+        function addDebugLog(message, type = 'info') {
+            const debugDiv = document.getElementById('debugConsole');
+            const time = new Date().toLocaleTimeString();
+            const colors = { info: '#0f0', error: '#f00', success: '#0f0' };
+            debugDiv.innerHTML += `<div class="debug-line" style="color:${colors[type] || '#0f0'};">[${time}] ${message}</div>`;
+            debugDiv.scrollTop = debugDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        // Initialize OneSignal with proper config
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         OneSignalDeferred.push(async function(OneSignal) {
-            await OneSignal.init({
-                appId: "d7c1ea6e-ba97-4e58-8660-178510f826f5",
-                safari_web_id: "web.onesignal.auto.12345",
-                allowLocalhostAsSecureOrigin: true,
-            });
-            console.log('OneSignal initialized');
+            addDebugLog('🔧 Initializing OneSignal...');
+            
+            try {
+                await OneSignal.init({
+                    appId: "d7c1ea6e-ba97-4e58-8660-178510f826f5",
+                    safari_web_id: "web.onesignal.auto.12345",
+                    allowLocalhostAsSecureOrigin: true,
+                });
+                addDebugLog('✅ OneSignal initialized successfully', 'success');
+                
+                // Check notification permission
+                const permission = await OneSignal.Notifications.permission;
+                addDebugLog(`📊 Current notification permission: ${permission}`);
+                
+            } catch (error) {
+                addDebugLog(`❌ OneSignal init failed: ${error.message}`, 'error');
+            }
         });
         
         async function subscribeToDarkHumor() {
@@ -133,52 +156,83 @@
                 formattedPhone = '+256' + phone;
             }
             
+            addDebugLog(`📱 Starting subscription for: ${formattedPhone}`);
             statusDiv.className = 'status';
             statusDiv.innerHTML = '🔔 Requesting permission...';
             
             try {
                 const OneSignal = window.OneSignal;
                 
-                // Request permission
+                if (!OneSignal) {
+                    throw new Error('OneSignal not loaded');
+                }
+                
+                // Step 1: Check if already subscribed
+                const isSubscribed = await OneSignal.Notifications.isSubscribed();
+                addDebugLog(`📊 Already subscribed: ${isSubscribed}`);
+                
+                // Step 2: Request permission
+                addDebugLog('🔔 Requesting notification permission...');
                 const permissionGranted = await OneSignal.Notifications.requestPermission();
                 
                 if (!permissionGranted) {
+                    addDebugLog('❌ User denied permission', 'error');
                     statusDiv.className = 'status error';
                     statusDiv.innerHTML = '❌ You must click ALLOW to receive notifications';
                     return;
                 }
                 
-                statusDiv.innerHTML = '📝 Registering...';
+                addDebugLog('✅ Permission granted', 'success');
+                statusDiv.innerHTML = '📝 Registering your device...';
                 
-                // Set external user ID
+                // Step 3: Set external user ID
+                addDebugLog(`🔑 Setting external user ID: ${formattedPhone}`);
                 await OneSignal.login(formattedPhone);
                 
-                // Wait for registration
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Step 4: Wait for registration
+                await new Promise(resolve => setTimeout(resolve, 3000));
                 
-                // Get the subscription ID directly from the SDK
-                let playerId = null;
+                // Step 5: Get the actual subscription
+                let realPlayerId = null;
+                let subscription = null;
                 
-                // Try to get from the internal subscription
+                // Try multiple methods to get subscription info
+                addDebugLog('🔍 Attempting to get subscription details...');
+                
+                // Method 1: Get push subscription
                 if (OneSignal.User && OneSignal.User.pushSubscription) {
-                    const sub = OneSignal.User.pushSubscription;
-                    playerId = sub.id || await sub.getId();
+                    subscription = OneSignal.User.pushSubscription;
+                    realPlayerId = subscription.id;
+                    addDebugLog(`📌 Method 1 - Subscription ID: ${realPlayerId || 'null'}`);
                 }
                 
-                // If still no ID, use a fallback
-                if (!playerId) {
-                    playerId = 'pending_' + Date.now();
+                // Method 2: Check if actually subscribed
+                const finalSubscriptionStatus = await OneSignal.Notifications.isSubscribed();
+                addDebugLog(`📊 Final subscription status: ${finalSubscriptionStatus}`);
+                
+                if (!finalSubscriptionStatus) {
+                    throw new Error('Not actually subscribed to OneSignal');
                 }
                 
-                console.log('Player ID:', playerId);
+                if (!realPlayerId) {
+                    addDebugLog('⚠️ Could not get player ID, but subscription exists', 'error');
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = '❌ Partial subscription. Please refresh and try again, or use Google Chrome browser.';
+                    return;
+                }
                 
-                // Save to worker
+                addDebugLog(`✅ Got REAL player ID: ${realPlayerId}`, 'success');
+                
+                // Step 6: Save to Gist
+                addDebugLog('💾 Saving to Gist...');
+                statusDiv.innerHTML = '💾 Saving subscription...';
+                
                 const response = await fetch(WORKER_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         phone: formattedPhone,
-                        player_id: playerId,
+                        player_id: realPlayerId,
                         subscribed_at: new Date().toISOString()
                     })
                 });
@@ -186,16 +240,18 @@
                 const result = await response.json();
                 
                 if (result.success) {
+                    addDebugLog('✅ Successfully saved to Gist!', 'success');
                     statusDiv.className = 'status success';
-                    statusDiv.innerHTML = '✅ Subscribed! You will receive notifications. 🖤';
+                    statusDiv.innerHTML = '✅ Subscribed! You will receive JEANS CLUB notifications. 🖤';
                     document.getElementById('phoneNumber').value = '';
                 } else {
-                    throw new Error(result.error);
+                    throw new Error(result.error || 'Failed to save');
                 }
                 
             } catch (error) {
+                addDebugLog(`❌ Error: ${error.message}`, 'error');
                 statusDiv.className = 'status error';
-                statusDiv.innerHTML = '❌ Error: ' + error.message;
+                statusDiv.innerHTML = `❌ Error: ${error.message}<br><br>💡 Please use Google Chrome browser and ensure notifications are enabled.`;
             }
         }
         
@@ -217,23 +273,33 @@
                 const response = await fetch(`${WORKER_URL}/subscribers`);
                 const data = await response.json();
                 
-                document.getElementById('totalGistCount').textContent = data.total || 0;
-                document.getElementById('totalOneSignalCount').textContent = data.valid || 0;
-                
                 if (data.total === 0) {
                     subscribersDiv.innerHTML = 'No subscribers yet.';
                 } else {
-                    subscribersDiv.innerHTML = data.subscribers.map(c => `
-                        <div class="subscriber-item">
-                            <div>
-                                <div class="subscriber-phone">${c.phone}</div>
-                                <div class="subscriber-date">
-                                    ${c.player_id && !c.player_id.startsWith('pending_') ? '<span class="badge-active">✅ Active</span>' : '<span class="badge-inactive">❌ Inactive</span>'}<br>
-                                    Subscribed: ${new Date(c.subscribed_at).toLocaleString()}
-                                </div>
-                            </div>
+                    let html = `<div class="stats-grid" style="display:flex; gap:10px; margin-bottom:15px;">
+                        <div class="stat-box" style="background:rgba(255,255,255,0.1); padding:10px; border-radius:8px; flex:1; text-align:center;">
+                            <div style="font-size:24px; color:#FFD700;">${data.total}</div>
+                            <div style="font-size:11px;">Total</div>
                         </div>
-                    `).join('');
+                        <div class="stat-box" style="background:rgba(255,255,255,0.1); padding:10px; border-radius:8px; flex:1; text-align:center;">
+                            <div style="font-size:24px; color:#FFD700;">${data.valid}</div>
+                            <div style="font-size:11px;">Active</div>
+                        </div>
+                    </div>`;
+                    
+                    html += '<div style="max-height:300px; overflow-y:auto;">';
+                    data.subscribers.forEach(c => {
+                        const isValid = c.player_id && !c.player_id.includes('pending') && !c.player_id.includes('temp');
+                        html += `
+                            <div style="background:rgba(255,255,255,0.1); padding:10px; border-radius:8px; margin-bottom:8px;">
+                                <div style="font-weight:bold; color:#FFD700;">${c.phone}</div>
+                                <div style="font-size:10px;">${isValid ? '✅ Active' : '❌ Inactive'}</div>
+                                <div style="font-size:9px; color:rgba(255,255,255,0.5);">${new Date(c.subscribed_at).toLocaleString()}</div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    subscribersDiv.innerHTML = html;
                 }
             } catch (error) {
                 subscribersDiv.innerHTML = 'Error loading subscribers.';
@@ -252,7 +318,7 @@
             }
             
             resultDiv.className = 'status';
-            resultDiv.innerHTML = '📡 Sending...';
+            resultDiv.innerHTML = '📡 Sending notification...';
             
             try {
                 const response = await fetch(`${WORKER_URL}/send`, {
@@ -265,13 +331,13 @@
                 
                 if (result.success) {
                     resultDiv.className = 'status success';
-                    resultDiv.innerHTML = `✅ Sent to ${result.sent_to} subscribers!`;
+                    resultDiv.innerHTML = `✅ Notification sent to ${result.sent_to} subscriber(s)!`;
                     document.getElementById('adminTitle').value = '';
                     document.getElementById('adminMessage').value = '';
                     loadSubscribers();
                 } else {
                     resultDiv.className = 'status error';
-                    resultDiv.innerHTML = `❌ Failed: ${result.error}`;
+                    resultDiv.innerHTML = `❌ Failed: ${result.error}<br>💡 ${result.suggestion || 'No active subscribers'}`;
                 }
             } catch (error) {
                 resultDiv.className = 'status error';
