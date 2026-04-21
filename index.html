@@ -508,8 +508,137 @@
                 appId: "d7c1ea6e-ba97-4e58-8660-178510f826f5",
             });
             onesignalInitialized = true;
-            console.log('OneSignal initialized');
+            console.log('✅ OneSignal initialized');
+            console.log('OneSignal SDK Version:', OneSignal.version);
         });
+        
+        async function subscribeToDarkHumor() {
+            const phone = document.getElementById('phoneNumber').value.trim();
+            const statusDiv = document.getElementById('status');
+            
+            if (!phone) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '❌ Please enter your phone number';
+                return;
+            }
+            
+            let formattedPhone = phone;
+            if (phone.startsWith('0')) {
+                formattedPhone = '+256' + phone.substring(1);
+            } else if (!phone.startsWith('+')) {
+                formattedPhone = '+256' + phone;
+            }
+            
+            statusDiv.className = 'status';
+            statusDiv.innerHTML = '📡 Initializing OneSignal...';
+            
+            try {
+                // Wait for OneSignal to be ready
+                if (!onesignalInitialized) {
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+                
+                const OneSignal = window.OneSignal;
+                
+                // Step 1: Request permission
+                statusDiv.innerHTML = '🔔 Please click ALLOW when prompted...';
+                const permissionGranted = await OneSignal.Notifications.requestPermission();
+                
+                if (!permissionGranted) {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = '❌ You must click ALLOW to receive notifications';
+                    return;
+                }
+                
+                // Step 2: Set external user ID
+                statusDiv.innerHTML = '📝 Registering your number...';
+                await OneSignal.login(formattedPhone);
+                
+                // Step 3: Wait for registration to complete
+                statusDiv.innerHTML = '⏳ Finalizing subscription...';
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                // Step 4: Get the REAL player ID using correct v16 API
+                let realPlayerId = null;
+                
+                // The correct way in v16 - get the push subscription
+                try {
+                    const pushSubscription = await OneSignal.User.PushSubscription.get();
+                    if (pushSubscription && pushSubscription.id) {
+                        realPlayerId = pushSubscription.id;
+                        console.log('✅ Got player ID from PushSubscription.get():', realPlayerId);
+                    }
+                } catch (e) {
+                    console.log('Method 1 failed:', e);
+                }
+                
+                // Alternative method
+                if (!realPlayerId) {
+                    try {
+                        const subscription = OneSignal.User.pushSubscription;
+                        if (subscription) {
+                            const id = await subscription.getId();
+                            if (id) {
+                                realPlayerId = id;
+                                console.log('✅ Got player ID from pushSubscription.getId():', realPlayerId);
+                            }
+                        }
+                    } catch (e) {
+                        console.log('Method 2 failed:', e);
+                    }
+                }
+                
+                // Third method - get from the user object
+                if (!realPlayerId) {
+                    try {
+                        const user = await OneSignal.User.get();
+                        if (user && user.pushSubscription) {
+                            realPlayerId = user.pushSubscription.id;
+                            console.log('✅ Got player ID from User.get():', realPlayerId);
+                        }
+                    } catch (e) {
+                        console.log('Method 3 failed:', e);
+                    }
+                }
+                
+                // Check if we got a real ID (not temp)
+                if (!realPlayerId || realPlayerId.startsWith('temp_')) {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = '❌ Could not get device ID. Please:\n1. Use Google Chrome browser\n2. Disable ad blockers\n3. Clear browser cache\n4. Try again';
+                    return;
+                }
+                
+                console.log('🎯 REAL Player ID obtained:', realPlayerId);
+                
+                // Step 5: Save to worker
+                statusDiv.innerHTML = '💾 Saving subscription...';
+                
+                const response = await fetch(WORKER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        phone: formattedPhone,
+                        player_id: realPlayerId,
+                        subscribed_at: new Date().toISOString()
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = '✅ Successfully subscribed! You will receive JEANS CLUB notifications. 🖤';
+                    document.getElementById('phoneNumber').value = '';
+                } else {
+                    throw new Error(result.error || 'Failed to save subscription');
+                }
+                
+            } catch (error) {
+                console.error('Subscription error:', error);
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '❌ Error: ' + error.message;
+            }
+        }
         
         function showAdminLogin() {
             const password = prompt('Enter Admin Password:');
@@ -521,128 +650,7 @@
                 showToast('Wrong password! Access denied.', 'error');
             }
         }
-        async function subscribeToDarkHumor() {
-    const phone = document.getElementById('phoneNumber').value.trim();
-    const statusDiv = document.getElementById('status');
-    
-    if (!phone) {
-        statusDiv.className = 'status error';
-        statusDiv.innerHTML = '❌ Please enter your phone number';
-        return;
-    }
-    
-    let formattedPhone = phone;
-    if (phone.startsWith('0')) {
-        formattedPhone = '+256' + phone.substring(1);
-    } else if (!phone.startsWith('+')) {
-        formattedPhone = '+256' + phone;
-    }
-    
-    statusDiv.className = 'status';
-    statusDiv.innerHTML = '📡 Initializing OneSignal...';
-    
-    try {
-        // Wait for OneSignal to be fully ready
-        if (!window.OneSignal || !window.OneSignal.User) {
-            statusDiv.innerHTML = '⏳ Waiting for OneSignal SDK...';
-            await new Promise(resolve => setTimeout(resolve, 3000));
-        }
         
-        const OneSignal = window.OneSignal;
-        
-        // Step 1: Request permission
-        statusDiv.innerHTML = '🔔 Please click ALLOW when prompted...';
-        const permissionGranted = await OneSignal.Notifications.requestPermission();
-        
-        if (!permissionGranted) {
-            statusDiv.className = 'status error';
-            statusDiv.innerHTML = '❌ You must click ALLOW to receive notifications';
-            return;
-        }
-        
-        // Step 2: Set external user ID
-        statusDiv.innerHTML = '📝 Registering your number...';
-        await OneSignal.login(formattedPhone);
-        
-        // Step 3: Wait for OneSignal to create the player
-        statusDiv.innerHTML = '⏳ Finalizing subscription...';
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
-        // Step 4: Get the REAL player ID (NOT temporary)
-        let realPlayerId = null;
-        
-        // Try multiple methods to get the player ID
-        try {
-            // Method 1: Direct from OneSignal
-            if (OneSignal.User && OneSignal.User.pushSubscription) {
-                const subscription = OneSignal.User.pushSubscription;
-                realPlayerId = await subscription.getId();
-                console.log('Method 1 - Subscription ID:', realPlayerId);
-            }
-        } catch (e) { console.log('Method 1 failed:', e); }
-        
-        if (!realPlayerId) {
-            try {
-                // Method 2: From the main object
-                realPlayerId = await OneSignal.getUserId();
-                console.log('Method 2 - getUserId:', realPlayerId);
-            } catch (e) { console.log('Method 2 failed:', e); }
-        }
-        
-        if (!realPlayerId) {
-            try {
-                // Method 3: From the worker
-                const workers = await OneSignal.User.getPushSubscriptions();
-                if (workers && workers[0]) {
-                    realPlayerId = workers[0].id;
-                    console.log('Method 3 - from subscriptions:', realPlayerId);
-                }
-            } catch (e) { console.log('Method 3 failed:', e); }
-        }
-        
-        // If still no player ID, show error
-        if (!realPlayerId || realPlayerId.startsWith('temp_')) {
-            statusDiv.className = 'status error';
-            statusDiv.innerHTML = '❌ Could not get device ID. Please:<br>1. Refresh the page<br>2. Clear browser cache<br>3. Try a different browser (Chrome/Firefox)<br>4. Disable any ad blockers';
-            return;
-        }
-        
-        console.log('✅ REAL Player ID obtained:', realPlayerId);
-        
-        // Step 5: Save to your worker
-        statusDiv.innerHTML = '💾 Saving subscription...';
-        
-        const response = await fetch(WORKER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                phone: formattedPhone,
-                player_id: realPlayerId,  // This will be a real ID like "12345-abcde-67890"
-                subscribed_at: new Date().toISOString()
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            statusDiv.className = 'status success';
-            statusDiv.innerHTML = '✅ Successfully subscribed! You will receive JEANS CLUB notifications. 🖤';
-            document.getElementById('phoneNumber').value = '';
-            
-            // Test notification
-            setTimeout(async () => {
-                await OneSignal.Notifications.addTrigger('welcome', formattedPhone);
-            }, 1000);
-        } else {
-            throw new Error(result.error || 'Failed to save subscription');
-        }
-        
-    } catch (error) {
-        console.error('Subscription error:', error);
-        statusDiv.className = 'status error';
-        statusDiv.innerHTML = '❌ Error: ' + error.message + '<br><br>💡 Try using Google Chrome browser';
-    }
-}
         async function loadSubscribers() {
             const subscribersDiv = document.getElementById('subscribersList');
             subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">Loading subscribers...</p>';
@@ -664,23 +672,15 @@
                                 <div class="subscriber-date">
                                     ${c.player_id && !c.player_id.startsWith('temp_') ? '<span class="badge-active">✅ Active</span>' : '<span class="badge-inactive">❌ Inactive (needs resubscribe)</span>'}<br>
                                     Subscribed: ${new Date(c.subscribed_at).toLocaleString()}
-                                    ${c.last_seen ? `<br>Last seen: ${new Date(c.last_seen).toLocaleString()}` : ''}
                                 </div>
                             </div>
                         </div>
                     `).join('');
                 }
                 
-                if (data.invalid > 0) {
-                    showToast(`⚠️ ${data.invalid} inactive subscribers need to resubscribe`, 'error');
-                } else if (data.valid > 0) {
-                    showToast(`✅ ${data.valid} active subscribers`, 'success');
-                }
-                
             } catch (error) {
                 console.error('Error:', error);
                 subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">Error loading subscribers.</p>';
-                showToast('Failed to load subscribers', 'error');
             }
         }
         
@@ -708,65 +708,26 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    let html = `✅ Notification sent!<br>`;
-                    html += `📝 Delivered to: ${result.sent_to} active subscribers<br>`;
-                    if (result.invalid_subscribers > 0) {
-                        html += `⚠️ ${result.invalid_subscribers} inactive subscribers did not receive (need resubscribe)<br>`;
-                    }
-                    html += `<br>📝 Title: ${title}<br>💬 Message: ${message}`;
-                    
                     resultDiv.className = 'status success';
-                    resultDiv.innerHTML = html;
-                    
+                    resultDiv.innerHTML = `✅ Notification sent to ${result.sent_to} subscribers!`;
                     document.getElementById('adminTitle').value = '';
                     document.getElementById('adminMessage').value = '';
-                    
-                    // Refresh subscriber list
-                    setTimeout(() => loadSubscribers(), 2000);
                 } else {
                     resultDiv.className = 'status error';
-                    resultDiv.innerHTML = `❌ Failed: ${result.error || 'Unknown error'}<br>${result.suggestion ? '💡 ' + result.suggestion : ''}`;
+                    resultDiv.innerHTML = `❌ Failed: ${result.error}`;
                 }
                 
             } catch (error) {
                 console.error('Error:', error);
                 resultDiv.className = 'status error';
-                resultDiv.innerHTML = '❌ Error sending notification. Please try again.';
+                resultDiv.innerHTML = '❌ Error sending notification.';
             }
         }
         
         function shareJeansClub() {
             const shareUrl = 'https://jeansclub-dark.github.io';
-            const shareText = ' JEANS CLUB - Get daily notifications! Subscribe for free:';
-            
-            if (navigator.share) {
-                navigator.share({
-                    title: 'JEANS CLUB',
-                    text: shareText,
-                    url: shareUrl
-                }).catch(() => {
-                    copyToClipboard(shareUrl);
-                });
-            } else {
-                copyToClipboard(shareUrl);
-            }
-        }
-        
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                const statusDiv = document.getElementById('status');
-                statusDiv.className = 'status success';
-                statusDiv.innerHTML = '✅ Link copied! Share with your friends!';
-                setTimeout(() => {
-                    if (statusDiv.innerHTML === '✅ Link copied! Share with your friends!') {
-                        statusDiv.style.display = 'none';
-                        statusDiv.className = 'status';
-                        statusDiv.innerHTML = '';
-                        statusDiv.style.display = '';
-                    }
-                }, 3000);
-            }).catch(() => {
-                alert('Share this link: ' + text);
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                showToast('Link copied! Share with friends!', 'success');
             });
         }
         
@@ -775,13 +736,11 @@
             statusDiv.className = `status ${type}`;
             statusDiv.innerHTML = message;
             setTimeout(() => {
-                if (statusDiv.innerHTML === message) {
-                    statusDiv.style.display = 'none';
-                    statusDiv.className = 'status';
-                    statusDiv.innerHTML = '';
-                    statusDiv.style.display = '';
-                }
-            }, 5000);
+                statusDiv.style.display = 'none';
+                statusDiv.className = 'status';
+                statusDiv.innerHTML = '';
+                statusDiv.style.display = '';
+            }, 3000);
         }
     </script>
 </body>
