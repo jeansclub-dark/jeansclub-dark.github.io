@@ -488,47 +488,51 @@
                 appId: "d7c1ea6e-ba97-4e58-8660-178510f826f5",
             });
         });
-      async function subscribeToDarkHumor() {
-    const phone = document.getElementById('phoneNumber').value.trim();
-    const statusDiv = document.getElementById('status');
-    
-    if (!phone) {
-        statusDiv.className = 'status error';
-        statusDiv.innerHTML = '❌ Please enter your phone number';
-        return;
-    }
-    
-    let formattedPhone = phone;
-    if (phone.startsWith('0')) {
-        formattedPhone = '+256' + phone.substring(1);
-    } else if (!phone.startsWith('+')) {
-        formattedPhone = '+256' + phone;
-    }
-    
-    statusDiv.className = 'status';
-    statusDiv.innerHTML = '📡 Please ALLOW notifications when prompted...';
-    
-    try {
-        const result = await OneSignal.Notifications.requestPermission();
         
-        if (result) {
-            await OneSignal.login(formattedPhone);
+        async function subscribeToDarkHumor() {
+            const phone = document.getElementById('phoneNumber').value.trim();
+            const statusDiv = document.getElementById('status');
             
-            // REMOVED: The fetch to Worker that was causing 500 error
-            // Now just save to OneSignal only
+            if (!phone) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '❌ Please enter your phone number';
+                return;
+            }
             
-            statusDiv.className = 'status success';
-            statusDiv.innerHTML = '✅ Subscribed! You will receive JEANS CLUB notifications daily. 🖤<br><br>📞 Save our contacts above if you need help!';
-            document.getElementById('phoneNumber').value = '';
-        } else {
-            statusDiv.className = 'status error';
-            statusDiv.innerHTML = '❌ You must click ALLOW to receive notifications. Please check your browser settings.';
+            let formattedPhone = phone;
+            if (phone.startsWith('0')) {
+                formattedPhone = '+256' + phone.substring(1);
+            } else if (!phone.startsWith('+')) {
+                formattedPhone = '+256' + phone;
+            }
+            
+            statusDiv.className = 'status';
+            statusDiv.innerHTML = '📡 Please ALLOW notifications when prompted...';
+            
+            try {
+                const result = await OneSignal.Notifications.requestPermission();
+                
+                if (result) {
+                    await OneSignal.login(formattedPhone);
+                    
+                    await fetch(WORKER_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phone: formattedPhone })
+                    });
+                    
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = '✅ Subscribed! You will receive JEANS CLUB notifications daily. 🖤<br><br>📞 Save our contacts above if you need help!';
+                    document.getElementById('phoneNumber').value = '';
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = '❌ You must click ALLOW to receive notifications please check your browser settings and under permissions allow notifications or go directly in your phone settings and allow notifications then Please refresh and try again.';
+                }
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '❌ Error: ' + error.message;
+            }
         }
-    } catch (error) {
-        statusDiv.className = 'status error';
-        statusDiv.innerHTML = '❌ Error: ' + error.message;
-    }
-}
         
         function showAdminLogin() {
             const password = prompt('Enter Admin Password:');
