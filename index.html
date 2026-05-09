@@ -21,7 +21,6 @@
             position: relative;
         }
         
-        /* Dark overlay for better text contrast */
         body::before {
             content: '';
             position: fixed;
@@ -356,6 +355,116 @@
             text-shadow: 1px 1px 1px rgba(0,0,0,0.2);
         }
         
+        /* Unsubscribe Prevention Modal Styles */
+        .unsubscribe-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 10000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .unsubscribe-modal {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 25px;
+            padding: 30px;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+            border: 2px solid #FFD700;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .unsubscribe-modal h2 {
+            color: #FFD700;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        .unsubscribe-modal .warning-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+        
+        .unsubscribe-modal .benefits-list {
+            text-align: left;
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        
+        .unsubscribe-modal .benefits-list p {
+            color: #ff6b6b;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        
+        .unsubscribe-modal .benefits-list p:before {
+            content: "❌ ";
+        }
+        
+        .unsubscribe-modal .countdown {
+            font-size: 36px;
+            font-weight: bold;
+            color: #FFD700;
+            margin: 15px 0;
+        }
+        
+        .unsubscribe-modal .modal-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .unsubscribe-modal .cancel-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            flex: 1;
+        }
+        
+        .unsubscribe-modal .confirm-btn {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            flex: 1;
+            opacity: 0.5;
+        }
+        
+        .unsubscribe-modal .confirm-btn.active {
+            opacity: 1;
+            cursor: pointer;
+        }
+        
+        .resubscribe-modal {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 25px;
+            padding: 30px;
+            max-width: 400px;
+            text-align: center;
+            border: 2px solid #FFD700;
+        }
+        
+        .resubscribe-modal button {
+            margin-top: 20px;
+        }
+        
         @media (max-width: 480px) {
             .main-card, .help-card, .qrcode-card, .admin-card, .subscribers-card {
                 padding: 18px;
@@ -367,7 +476,6 @@
             button { padding: 14px 20px; font-size: 16px; }
         }
         
-        /* loading spinner inline */
         .spinner {
             display: inline-block;
             width: 16px;
@@ -415,7 +523,6 @@
         
         <!-- Admin Panel (Hidden by default) -->
         <div id="adminPanel" class="admin-panel">
-            <!-- Admin Notification Card -->
             <div class="admin-card">
                 <div class="admin-title">👑 ADMIN CONTROL</div>
                 
@@ -435,7 +542,6 @@
                 <div id="adminResult" class="status"></div>
             </div>
             
-            <!-- Subscribers Stats Card -->
             <div class="subscribers-card">
                 <div class="subscribers-title">📊 SUBSCRIBER STATISTICS</div>
                 
@@ -534,11 +640,54 @@
         </div>
     </div>
 
+    <!-- Unsubscribe Prevention Modals -->
+    <div id="unsubscribeModal" class="unsubscribe-modal-overlay">
+        <div class="unsubscribe-modal">
+            <div class="warning-icon">⚠️</div>
+            <h2>WAIT! Are you sure?</h2>
+            <p>By unsubscribing, you will lose:</p>
+            <div class="benefits-list">
+                <p>50-70% OFF flash sale alerts</p>
+                <p>Early access to new collections</p>
+                <p>Member-only discount codes</p>
+                <p>Birthday special offers</p>
+                <p>Restock notifications for sold-out items</p>
+            </div>
+            <div class="countdown" id="countdownTimer">3</div>
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="cancelUnsubscribe()">👍 STAY SUBSCRIBED</button>
+                <button class="confirm-btn" id="confirmUnsubBtn" onclick="confirmUnsubscribe()">⚠️ UNSUBSCRIBE</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="resubscribeModal" class="unsubscribe-modal-overlay">
+        <div class="resubscribe-modal">
+            <div class="warning-icon">🔔</div>
+            <h2>You're Missing Out!</h2>
+            <p>You unsubscribed from JEANS CLUB notifications.</p>
+            <p style="margin-top: 15px;">You're missing:</p>
+            <div class="benefits-list">
+                <p>Flash sales up to 70% off</p>
+                <p>Early access to new denim drops</p>
+                <p>Exclusive member discounts</p>
+            </div>
+            <button onclick="resubscribe()" style="background: linear-gradient(135deg, #FFD700, #FFA500);">
+                🔔 RESUBSCRIBE NOW
+            </button>
+            <button onclick="closeResubscribeModal()" style="margin-top: 10px; background: #333;">
+                ❌ No, thanks
+            </button>
+        </div>
+    </div>
+
     <script>
         const WORKER_URL = 'https://jeansclub-gist-api.amanyakeith418.workers.dev';
         const ADMIN_PASSWORD = 'JEANSCLUB2024';
+        let pendingUnsubscribe = false;
+        let countdownInterval = null;
         
-        // ===================== UPDATED ONESIGNAL INIT (with autoResubscribe) =====================
+        // ===================== ONESIGNAL INIT =====================
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         OneSignalDeferred.push(async function(OneSignal) {
             await OneSignal.init({
@@ -549,12 +698,95 @@
                 }
             });
             console.log("✓ OneSignal initialized with autoResubscribe");
-            // Optional: log any existing external ID for debugging
+            
             const existingId = await OneSignal.User.externalId;
             if (existingId) console.log("Existing external ID:", existingId);
+            
+            // Monitor for unsubscribe attempts
+            OneSignal.User.PushSubscription.addEventListener("change", async (subscribed) => {
+                if (!subscribed && !pendingUnsubscribe) {
+                    // User tried to unsubscribe - show warning modal
+                    showUnsubscribeWarning();
+                    
+                    // Small delay then resubscribe to prevent actual unsubscribe
+                    setTimeout(async () => {
+                        if (!await OneSignal.User.PushSubscription.optedIn) {
+                            await OneSignal.Notifications.requestPermission();
+                        }
+                    }, 500);
+                } else if (subscribed) {
+                    console.log("✅ Subscribed successfully");
+                }
+                pendingUnsubscribe = false;
+            });
         });
         
-        // ===================== FIXED SUBSCRIBE FUNCTION (with proper waiting & external ID sync) =====================
+        // ===================== UNSUBSCRIBE PREVENTION =====================
+        function showUnsubscribeWarning() {
+            pendingUnsubscribe = true;
+            const modal = document.getElementById('unsubscribeModal');
+            modal.style.display = 'flex';
+            
+            let countdown = 3;
+            const timerDisplay = document.getElementById('countdownTimer');
+            const confirmBtn = document.getElementById('confirmUnsubBtn');
+            
+            confirmBtn.classList.remove('active');
+            
+            if (countdownInterval) clearInterval(countdownInterval);
+            
+            countdownInterval = setInterval(() => {
+                countdown--;
+                timerDisplay.textContent = countdown;
+                
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    timerDisplay.textContent = "✓";
+                    confirmBtn.classList.add('active');
+                }
+            }, 1000);
+        }
+        
+        function cancelUnsubscribe() {
+            clearInterval(countdownInterval);
+            document.getElementById('unsubscribeModal').style.display = 'none';
+            pendingUnsubscribe = false;
+            showToast('✅ Smart choice! You kept your VIP access!', 'success');
+        }
+        
+        async function confirmUnsubscribe() {
+            const confirmBtn = document.getElementById('confirmUnsubBtn');
+            if (!confirmBtn.classList.contains('active')) {
+                showToast('⏳ Please wait 3 seconds before confirming', 'error');
+                return;
+            }
+            
+            clearInterval(countdownInterval);
+            document.getElementById('unsubscribeModal').style.display = 'none';
+            
+            // Actually unsubscribe
+            await OneSignal.User.PushSubscription.optOut();
+            showToast('❌ You have unsubscribed. We\'ll miss you!', 'error');
+            
+            // Show resubscribe modal after 2 seconds
+            setTimeout(() => {
+                document.getElementById('resubscribeModal').style.display = 'flex';
+            }, 2000);
+        }
+        
+        async function resubscribe() {
+            document.getElementById('resubscribeModal').style.display = 'none';
+            const result = await OneSignal.Notifications.requestPermission();
+            if (result) {
+                showToast('✅ Welcome back! You\'re subscribed again!', 'success');
+            }
+        }
+        
+        function closeResubscribeModal() {
+            document.getElementById('resubscribeModal').style.display = 'none';
+        }
+        
+        // ===================== SUBSCRIBE FUNCTION =====================
         async function subscribeToDarkHumor() {
             const phone = document.getElementById('phoneNumber').value.trim();
             const statusDiv = document.getElementById('status');
@@ -573,7 +805,6 @@
                 formattedPhone = '+256' + phone;
             }
             
-            // Basic validation: should look like +256XXXXXXXXX
             if (!/^\+256[0-9]{9}$/.test(formattedPhone)) {
                 statusDiv.className = 'status error';
                 statusDiv.innerHTML = '❌ Please enter a valid Ugandan number (e.g., 0772558913 or +256772558913)';
@@ -585,22 +816,18 @@
             subscribeBtn.disabled = true;
             
             try {
-                // STEP 1: Request permission from OneSignal (browser prompt)
                 const permissionResult = await OneSignal.Notifications.requestPermission();
                 
                 if (!permissionResult) {
                     statusDiv.className = 'status error';
-                    statusDiv.innerHTML = '❌ You must click ALLOW to receive notifications. Please refresh and try again.';
+                    statusDiv.innerHTML = '❌ You must click ALLOW to receive notifications.';
                     subscribeBtn.disabled = false;
                     return;
                 }
                 
                 statusDiv.innerHTML = '✅ Permission granted! Registering your number... <span class="spinner"></span>';
-                
-                // STEP 2: Small delay for OneSignal to stabilize subscription
                 await new Promise(resolve => setTimeout(resolve, 1200));
                 
-                // STEP 3: Double-check user is actually opted in
                 const subscription = await OneSignal.User.PushSubscription.optedIn;
                 if (!subscription) {
                     statusDiv.className = 'status error';
@@ -609,7 +836,6 @@
                     return;
                 }
                 
-                // STEP 4: Set external ID (phone number) with retry logic
                 let externalIdSet = false;
                 for (let attempt = 1; attempt <= 2; attempt++) {
                     try {
@@ -626,15 +852,6 @@
                     }
                 }
                 
-                if (!externalIdSet) {
-                    console.warn("External ID not confirmed, but continuing anyway");
-                    statusDiv.innerHTML = '⚠️ Syncing your number... Still saving subscription.';
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                } else {
-                    console.log("✅ External ID confirmed:", formattedPhone);
-                }
-                
-                // STEP 5: Save to Gist backend (Cloudflare Worker)
                 const saveResult = await fetch(WORKER_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -650,14 +867,11 @@
                     statusDiv.innerHTML = '✅ Subscribed successfully! 🎉 You will receive JEANS CLUB notifications daily.<br><br>📞 Save our contacts above if you need any help!';
                     document.getElementById('phoneNumber').value = '';
                     
-                    // Final verification in background (just for logging)
                     setTimeout(async () => {
                         const finalExternalId = await OneSignal.User.externalId;
                         if (!finalExternalId) {
                             console.warn('External ID still missing after delays - manual retry');
                             try { await OneSignal.login(formattedPhone); } catch(e) {}
-                        } else {
-                            console.log('External ID active:', finalExternalId);
                         }
                     }, 2500);
                 } else {
@@ -670,10 +884,9 @@
             } catch (error) {
                 console.error('Subscription error:', error);
                 statusDiv.className = 'status error';
-                statusDiv.innerHTML = '❌ Error: ' + (error.message || 'Something went wrong. Please try again.');
+                statusDiv.innerHTML = '❌ Error: ' + (error.message || 'Something went wrong.');
             } finally {
                 subscribeBtn.disabled = false;
-                // auto-hide status after 8 seconds if success
                 setTimeout(() => {
                     if (statusDiv.className.includes('success')) {
                         setTimeout(() => {
@@ -689,7 +902,7 @@
             }
         }
         
-        // Admin login & panel
+        // ===================== ADMIN FUNCTIONS =====================
         function showAdminLogin() {
             const password = prompt('Enter Admin Password:');
             if (password === ADMIN_PASSWORD) {
@@ -701,7 +914,6 @@
             }
         }
         
-        // Load subscribers from Gist only (since we store all phone numbers there)
         async function loadSubscribers() {
             const subscribersDiv = document.getElementById('subscribersList');
             subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">🔄 Loading subscribers...</p>';
@@ -713,7 +925,7 @@
                 const gistCustomers = gistData.customers || [];
                 
                 document.getElementById('totalGistCount').textContent = gistCustomers.length;
-                document.getElementById('totalOneSignalCount').textContent = gistCustomers.length; // mirror for consistency
+                document.getElementById('totalOneSignalCount').textContent = gistCustomers.length;
                 
                 if (gistCustomers.length === 0) {
                     subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">📭 No subscribers yet. Share the page!</p>';
@@ -730,12 +942,11 @@
                 showToast(`✅ Loaded ${gistCustomers.length} subscribers`, 'success');
             } catch (error) {
                 console.error('Load error:', error);
-                subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">⚠️ Failed to load subscribers. Check connection.</p>';
+                subscribersDiv.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">⚠️ Failed to load subscribers.</p>';
                 showToast('Failed to load subscribers', 'error');
             }
         }
         
-        // Send custom notification via Cloudflare Worker
         async function sendCustomNotification() {
             const title = document.getElementById('adminTitle').value.trim();
             const message = document.getElementById('adminMessage').value.trim();
@@ -761,7 +972,7 @@
                 
                 if (result.success) {
                     resultDiv.className = 'status success';
-                    resultDiv.innerHTML = `✅ Notification broadcasted to ${result.sent_to} subscribers!<br><br>📢 ${title}<br>💬 ${message}`;
+                    resultDiv.innerHTML = `✅ Notification broadcasted!<br><br>📢 ${title}<br>💬 ${message}`;
                     document.getElementById('adminTitle').value = '';
                     document.getElementById('adminMessage').value = '';
                     setTimeout(() => {
@@ -774,7 +985,7 @@
                     }, 6000);
                 } else {
                     resultDiv.className = 'status error';
-                    resultDiv.innerHTML = `❌ Failed: ${result.error || 'Unknown error from server'}`;
+                    resultDiv.innerHTML = `❌ Failed: ${result.error || 'Unknown error'}`;
                 }
             } catch (error) {
                 console.error('Send error:', error);
@@ -783,10 +994,9 @@
             }
         }
         
-        // Share JEANS CLUB link
         function shareJeansClub() {
             const shareUrl = 'https://jeansclub-dark.github.io';
-            const shareText = '🔥 JEANS CLUB - Get daily denim deals, style alerts & exclusive discounts! Subscribe for free notifications:';
+            const shareText = '🔥 JEANS CLUB - Get daily denim deals, style alerts & exclusive discounts!';
             
             if (navigator.share) {
                 navigator.share({
@@ -831,11 +1041,10 @@
             }, 4500);
         }
         
-        // Helper to ensure phone input formatting hint
         document.getElementById('phoneNumber')?.addEventListener('input', function(e) {
             let val = e.target.value.replace(/\s/g, '');
             if (val.startsWith('0') && val.length > 1) {
-                // just hint, no auto replace to avoid confusion
+                // just hint
             }
         });
     </script>
